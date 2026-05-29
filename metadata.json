@@ -1,0 +1,6 @@
+{
+  "name": "Leonel CRM",
+  "description": "Aplicativo CRM para clínica de estética com agendamento, gestão de equipe, serviços, financeiro, mensagens e página pública de agendamento.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
