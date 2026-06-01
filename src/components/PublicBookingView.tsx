@@ -40,10 +40,18 @@ export default function PublicBookingView({
   const [selectedTime, setSelectedTime] = useState('');
   
   // Client info state
-  const [isNewClient, setIsNewClient] = useState(false);
-  const [clientName, setClientName] = useState('');
-  const [clientPhone, setClientPhone] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
+  const [isNewClient, setIsNewClient] = useState<boolean>(() => {
+    return localStorage.getItem('lumini_last_is_new_client') === 'true';
+  });
+  const [clientName, setClientName] = useState(() => {
+    return localStorage.getItem('lumini_last_client_name') || '';
+  });
+  const [clientPhone, setClientPhone] = useState(() => {
+    return localStorage.getItem('lumini_last_client_phone') || '';
+  });
+  const [clientEmail, setClientEmail] = useState(() => {
+    return localStorage.getItem('lumini_last_client_email') || '';
+  });
   const [clientNotes, setClientNotes] = useState('');
   
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
@@ -71,9 +79,18 @@ export default function PublicBookingView({
     const startH = parseInt(currentDayHours.start.split(':')[0]);
     const endH = parseInt(currentDayHours.end.split(':')[0]);
     
+    const isLunchBlocked = (timeStr: string) => {
+      if (!currentDayHours.lunchEnabled || !currentDayHours.lunchStart || !currentDayHours.lunchEnd) {
+        return false;
+      }
+      return timeStr >= currentDayHours.lunchStart && timeStr < currentDayHours.lunchEnd;
+    };
+
     for (let h = startH; h < endH; h++) {
-      slots.push(`${String(h).padStart(2, '0')}:00`);
-      slots.push(`${String(h).padStart(2, '0')}:30`);
+      const slot1 = `${String(h).padStart(2, '0')}:00`;
+      const slot2 = `${String(h).padStart(2, '0')}:30`;
+      if (!isLunchBlocked(slot1)) slots.push(slot1);
+      if (!isLunchBlocked(slot2)) slots.push(slot2);
     }
     return slots;
   };
@@ -102,6 +119,12 @@ export default function PublicBookingView({
       alert('Por favor, preencha o seu nome e telefone WhatsApp.');
       return;
     }
+
+    // Save contact information so client doesn't need to type it again next time
+    localStorage.setItem('lumini_last_client_name', clientName);
+    localStorage.setItem('lumini_last_client_phone', clientPhone);
+    localStorage.setItem('lumini_last_client_email', clientEmail);
+    localStorage.setItem('lumini_last_is_new_client', isNewClient ? 'true' : 'false');
 
     const price = selectedService ? selectedService.price : 0;
     

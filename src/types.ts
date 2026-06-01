@@ -54,6 +54,9 @@ export interface OperatingHour {
   enabled: boolean;
   start: string; // HH:MM
   end: string; // HH:MM
+  lunchEnabled?: boolean;
+  lunchStart?: string; // HH:MM
+  lunchEnd?: string; // HH:MM
 }
 
 export interface ThemePreset {

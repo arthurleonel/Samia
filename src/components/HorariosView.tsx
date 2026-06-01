@@ -84,20 +84,70 @@ export default function HorariosView({
 
             {/* Interval Selection Inputs */}
             {row.enabled ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="time"
-                  value={row.start}
-                  onChange={(e) => handleChangeTime(idx, 'start', e.target.value)}
-                  className="px-2.5 py-1.5 border border-slate-150 rounded-xl text-xs font-mono font-medium text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-slate-350"
-                />
-                <span className="text-xs text-slate-400 font-medium">às</span>
-                <input
-                  type="time"
-                  value={row.end}
-                  onChange={(e) => handleChangeTime(idx, 'end', e.target.value)}
-                  className="px-2.5 py-1.5 border border-slate-150 rounded-xl text-xs font-mono font-medium text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-slate-350"
-                />
+              <div className="flex flex-col gap-2 items-end sm:items-start text-right sm:text-left">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-400 font-bold font-mono tracking-wider uppercase mr-1">Expediente:</span>
+                  <input
+                    type="time"
+                    value={row.start}
+                    onChange={(e) => handleChangeTime(idx, 'start', e.target.value)}
+                    className="px-2.5 py-1.5 border border-slate-150 rounded-xl text-xs font-mono font-medium text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-slate-350"
+                  />
+                  <span className="text-xs text-slate-400 font-medium font-sans">às</span>
+                  <input
+                    type="time"
+                    value={row.end}
+                    onChange={(e) => handleChangeTime(idx, 'end', e.target.value)}
+                    className="px-2.5 py-1.5 border border-slate-150 rounded-xl text-xs font-mono font-medium text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-slate-350"
+                  />
+                </div>
+                
+                {/* Lunch Break Blocker */}
+                <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-600">
+                  <label className="flex items-center gap-1.5 cursor-pointer font-medium hover:text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={!!row.lunchEnabled}
+                      onChange={(e) => {
+                        const updated = [...localHours];
+                        updated[idx].lunchEnabled = e.target.checked;
+                        if (e.target.checked) {
+                          updated[idx].lunchStart = updated[idx].lunchStart || '12:00';
+                          updated[idx].lunchEnd = updated[idx].lunchEnd || '13:00';
+                        }
+                        setLocalHours(updated);
+                      }}
+                      className="rounded text-slate-700 focus:ring-slate-400 w-3.5 h-3.5"
+                    />
+                    <span>Horário de Almoço (Bloquear)</span>
+                  </label>
+                  
+                  {row.lunchEnabled && (
+                    <div className="flex items-center gap-1.5 animate-fade-in pl-2 border-l border-slate-250 select-none">
+                      <input
+                        type="time"
+                        value={row.lunchStart || '12:00'}
+                        onChange={(e) => {
+                          const updated = [...localHours];
+                          updated[idx].lunchStart = e.target.value;
+                          setLocalHours(updated);
+                        }}
+                        className="px-2 py-1.5 border border-slate-150 rounded-xl text-[11px] font-mono font-medium text-slate-700 bg-white focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-sans">às</span>
+                      <input
+                        type="time"
+                        value={row.lunchEnd || '13:00'}
+                        onChange={(e) => {
+                          const updated = [...localHours];
+                          updated[idx].lunchEnd = e.target.value;
+                          setLocalHours(updated);
+                        }}
+                        className="px-2 py-1.5 border border-slate-150 rounded-xl text-[11px] font-mono font-medium text-slate-700 bg-white focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="px-5 py-1.5 bg-red-50 text-red-500 font-bold border border-red-100/30 rounded-full text-[10px] uppercase font-mono">

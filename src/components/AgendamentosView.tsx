@@ -31,8 +31,8 @@ export default function AgendamentosView({
 }: AgendamentosViewProps) {
   const [viewType, setViewType] = useState<'Mês' | 'Semana' | 'Dia'>('Mês');
   const todayDate = new Date();
-  const [currentYear, setCurrentYear] = useState<number>(2026);
-  const [currentMonth, setCurrentMonth] = useState<number>(4); // Default starts on 4 (May 2026) to preserve original design, but allows navigation
+  const [currentYear, setCurrentYear] = useState<number>(todayDate.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState<number>(todayDate.getMonth());
 
   // Edit mode tracking states
   const [isEditing, setIsEditing] = useState(false);

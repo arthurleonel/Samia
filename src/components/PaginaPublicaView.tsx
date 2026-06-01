@@ -476,8 +476,19 @@ export default function PaginaPublicaView({
                     const slots: string[] = [];
                     const startH = parseInt(hours.start.split(':')[0]);
                     const endH = parseInt(hours.end.split(':')[0]);
+                    
+                    const isLunchBlocked = (timeStr: string) => {
+                      if (!hours.lunchEnabled || !hours.lunchStart || !hours.lunchEnd) {
+                        return false;
+                      }
+                      return timeStr >= hours.lunchStart && timeStr < hours.lunchEnd;
+                    };
+
                     for (let h = startH; h < endH; h++) {
-                      slots.push(`${String(h).padStart(2, '0')}:00`);
+                      const slotVal = `${String(h).padStart(2, '0')}:00`;
+                      if (!isLunchBlocked(slotVal)) {
+                        slots.push(slotVal);
+                      }
                     }
                     if (slots.length === 0) {
                       return <p className="text-[8px] text-slate-400 italic">Sem horários hoje.</p>;

@@ -4,7 +4,7 @@ import { Sparkles, Shield, User, Lock, Phone, Layout, Key, ArrowRight, CheckCirc
 interface LoginViewProps {
   onLogin: (role: 'admin' | 'clinic', tenantId?: string) => void;
   tenants: any[];
-  onCreateTenant: (tenant: { name: string; email: string; password?: string; phone: string; plan: string }) => void;
+  onCreateTenant: (tenant: { name: string; email: string; password?: string; phone: string; plan: string }) => Promise<boolean>;
 }
 
 export default function LoginView({ onLogin, tenants, onCreateTenant }: LoginViewProps) {
@@ -42,11 +42,11 @@ export default function LoginView({ onLogin, tenants, onCreateTenant }: LoginVie
       }
       onLogin('clinic', found.id);
     } else {
-      setLoginError('Credenciais inválidas. Use "admin@leonel.com" para Superadmin.');
+      setLoginError('Credenciais inválidas. Por favor, verifique seu e-mail e senha.');
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail || !regPassword) {
       alert('Por favor, preencha todos os campos obrigatórios.');
@@ -68,16 +68,10 @@ export default function LoginView({ onLogin, tenants, onCreateTenant }: LoginVie
       plan: 'Grátis'
     };
 
-    onCreateTenant(newTenant);
-    setRegSuccess(true);
-    setTimeout(() => {
-      // Auto switch and log in
-      const savedTenants = JSON.parse(localStorage.getItem('lumini_tenants') || '[]');
-      const newlyCreated = savedTenants.find((t: any) => t.email === regEmail);
-      if (newlyCreated) {
-        onLogin('clinic', newlyCreated.id);
-      }
-    }, 1500);
+    const success = await onCreateTenant(newTenant);
+    if (success) {
+      setRegSuccess(true);
+    }
   };
 
   return (

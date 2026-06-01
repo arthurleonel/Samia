@@ -269,6 +269,78 @@ app.post('/api/saas/tenants', async (req, res) => {
   res.json({ success: true, database: false });
 });
 
+// 4b. Register a new tenant safely (prevents client-side race conditions / competitive overwriting)
+app.post('/api/saas/register-tenant', async (req, res) => {
+  const { name, email, password, phone, plan } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+  }
+
+  // 1. Get the latest tenants list from SQL or fallback cache
+  let currentTenants: any[] = [];
+  try {
+    if (isDbConnected && pool) {
+      const tenantsRes = await pool.query('SELECT tenants_json FROM saas_tenants WHERE id = $1', ['global']);
+      if (tenantsRes.rows.length > 0) {
+        currentTenants = JSON.parse(tenantsRes.rows[0].tenants_json);
+      } else {
+        currentTenants = localCache.tenants || [];
+      }
+    } else {
+      currentTenants = localCache.tenants || [];
+    }
+  } catch (err: any) {
+    console.error('[DB Register Load Error]:', err.message);
+    currentTenants = localCache.tenants || [];
+  }
+
+  // Ensure it is an array
+  if (!Array.isArray(currentTenants)) {
+    currentTenants = [];
+  }
+
+  // 2. Check if already exists
+  const exists = currentTenants.some((t: any) => t.email && t.email.toLowerCase() === email.toLowerCase());
+  if (exists || email.toLowerCase() === 'admin@leonel.com' || email.toLowerCase() === 'admin@lumini.com') {
+    return res.status(400).json({ error: 'Este endereço de email já está em uso.' });
+  }
+
+  // 3. Create new tenant object
+  const newTenantId = 'tenant_' + Math.random().toString(36).substring(2, 11);
+  const newT = {
+    id: newTenantId,
+    name,
+    email,
+    password,
+    phone: phone || '',
+    plan: plan || 'Grátis',
+    status: 'Ativo',
+    sidebarTitle: name,
+    sidebarSubtitle: 'Estética Avançada',
+    createdAt: new Date().toISOString()
+  };
+
+  currentTenants.push(newT);
+
+  // 4. Save updated list
+  localCache.tenants = currentTenants;
+  saveCacheToFallbackFile();
+
+  try {
+    if (isDbConnected && pool) {
+      await pool.query(
+        `INSERT INTO saas_tenants (id, tenants_json) VALUES ($1, $2)
+         ON CONFLICT (id) DO UPDATE SET tenants_json = EXCLUDED.tenants_json`,
+        ['global', JSON.stringify(currentTenants)]
+      );
+    }
+  } catch (err: any) {
+    console.error('[DB Register Save Error]:', err.message);
+  }
+
+  res.json({ success: true, newTenant: newT, tenants: currentTenants });
+});
+
 // 5. Load complete clinic data (all storage tables)
 app.get('/api/tenant/:tenantId/load', async (req, res) => {
   const { tenantId } = req.params;

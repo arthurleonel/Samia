@@ -133,25 +133,15 @@ export default function App() {
       } else if (lowerPath === 'samia' || lowerPath === 'trial-clinic') {
         matchedTenant = 'trial-clinic';
       } else {
-        try {
-          const rawTenants = localStorage.getItem('lumini_tenants');
-          if (rawTenants) {
-            const parsed = JSON.parse(rawTenants);
-            const found = parsed.find((t: any) => 
-              t.id.toLowerCase() === lowerPath || 
-              t.name.toLowerCase().replace(/\s+/g, '-') === lowerPath ||
-              (t.sidebarTitle && t.sidebarTitle.toLowerCase() === lowerPath)
-            );
-            if (found) {
-              matchedTenant = found.id;
-            } else {
-              matchedTenant = lowerPath; // direct fallback to url slug
-            }
-          } else {
-            matchedTenant = lowerPath;
-          }
-        } catch (e) {
-          matchedTenant = lowerPath;
+        const found = tenants.find((t: any) => 
+          t.id.toLowerCase() === lowerPath || 
+          t.name.toLowerCase().replace(/\s+/g, '-') === lowerPath ||
+          (t.sidebarTitle && t.sidebarTitle.toLowerCase() === lowerPath)
+        );
+        if (found) {
+          matchedTenant = found.id;
+        } else {
+          matchedTenant = lowerPath; // direct fallback to url slug
         }
       }
       return {
@@ -558,6 +548,31 @@ export default function App() {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [activeTenantId]);
+
+  const refreshSaaSData = () => {
+    fetch('/api/saas/init')
+      .then(res => res.json())
+      .then(res => {
+        if (res.pricing) setPricing(res.pricing);
+        if (res.planFeatures) setPlanFeatures(res.planFeatures);
+        if (res.tenants && res.tenants.length > 0) {
+          setTenants(res.tenants);
+          localStorage.setItem('lumini_tenants', JSON.stringify(res.tenants));
+        }
+      })
+      .catch((err) => {
+        console.warn('[FullStack Init] Could not fetch SaaS init payload, using local backup config:', err.message);
+      });
+  };
+
+  useEffect(() => {
+    // Sincroniza dados globais do SaaS (Preços, Funcionalidades, e Lista de Clínicas de toda a base)
+    refreshSaaSData();
+
+    // Sincronização periódica inteligente de novos cadastros a cada 30s
+    const saasSyncInterval = setInterval(refreshSaaSData, 30000);
+    return () => clearInterval(saasSyncInterval);
+  }, []);
 
   // Pricing storage sync
   useEffect(() => {
@@ -1155,22 +1170,33 @@ export default function App() {
           setSession({ role, tenantId });
           setActiveTab('dashboard');
         }}
-        onCreateTenant={(newT) => {
-          setTenants(prev => [
-            ...prev,
-            {
-              id: generateUniqueId('tenant'),
-              name: newT.name,
-              email: newT.email,
-              password: newT.password,
-              phone: newT.phone,
-              plan: newT.plan,
-              status: 'Ativo',
-              sidebarTitle: newT.name,
-              sidebarSubtitle: 'Estética Avançada',
-              createdAt: new Date().toISOString()
+        onCreateTenant={async (newT) => {
+          try {
+            const res = await fetch('/api/saas/register-tenant', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newT)
+            });
+            const data = await res.json();
+            if (data.success) {
+              setTenants(data.tenants);
+              localStorage.setItem('lumini_tenants', JSON.stringify(data.tenants));
+              
+              // Transition smoothly - log in after showing success animation
+              setTimeout(() => {
+                setSession({ role: 'clinic', tenantId: data.newTenant.id });
+                setActiveTab('dashboard');
+              }, 1500);
+              return true;
+            } else {
+              alert(data.error || 'Erro ao registrar clínica');
+              return false;
             }
-          ]);
+          } catch (err: any) {
+            console.error('Erro ao registrar:', err);
+            alert('Não foi possível se conectar com o servidor para criar a conta. Verifique sua conexão.');
+            return false;
+          }
         }}
       />
     );
@@ -1202,6 +1228,7 @@ export default function App() {
         onLogout={() => setSession(null)}
         planFeatures={planFeatures}
         onUpdatePlanFeatures={(newFeatures) => setPlanFeatures(newFeatures)}
+        onRefreshData={refreshSaaSData}
       />
     );
   }

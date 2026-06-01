@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Building2, Users, DollarSign, Award, Grid, ShieldAlert, BadgeHelp, Play, Trash2, Save, LogOut, CheckCircle, Info, Server, Code, FileCode, Check, Settings
+  Building2, Users, DollarSign, Award, Grid, ShieldAlert, BadgeHelp, Play, Trash2, Save, LogOut, CheckCircle, Info, Server, Code, FileCode, Check, Settings, RotateCw
 } from 'lucide-react';
 import { PlanFeatures } from '../types';
 
@@ -16,6 +16,7 @@ interface SuperadminViewProps {
   planFeatures: Record<string, PlanFeatures>;
   onUpdatePlanFeatures: (features: Record<string, PlanFeatures>) => void;
   onRejectTenantPlanRequest?: (id: string) => void;
+  onRefreshData?: () => void;
 }
 
 export default function SuperadminView({
@@ -30,6 +31,7 @@ export default function SuperadminView({
   planFeatures,
   onUpdatePlanFeatures,
   onRejectTenantPlanRequest,
+  onRefreshData,
 }: SuperadminViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -127,6 +129,17 @@ export default function SuperadminView({
         </div>
 
         <div className="flex items-center gap-4">
+          {onRefreshData && (
+            <button
+              onClick={() => {
+                onRefreshData();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-800 rounded-xl text-[10px] font-bold text-slate-300 transition-all cursor-pointer"
+              title="Forçar sincronização de dados do servidor"
+            >
+              <RotateCw size={11} /> Sincronizar
+            </button>
+          )}
           <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-mono text-emerald-400 font-bold">
             🟢 Banco Central Ativo (PostgreSQL Ready)
           </span>
