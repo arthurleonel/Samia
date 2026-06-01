@@ -91,9 +91,6 @@ export default function LoginView({ onLogin, tenants, onCreateTenant }: LoginVie
         
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-400/20 rounded-full text-[10px] uppercase font-mono tracking-widest leading-none">
-            <Sparkles size={11} className="animate-spin text-indigo-400" /> SaaS Multi-Tenant Actived
-          </div>
           <h2 className="text-2xl font-black text-white tracking-tight">LEONEL <span className="text-indigo-400">CRM</span></h2>
           <p className="text-slate-400 text-xs">Gestão Integrada para Clínicas de Estética Avançada</p>
         </div>
