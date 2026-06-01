@@ -15,6 +15,7 @@ interface DashboardViewProps {
   onUpdateAppointmentStatus: (id: string, newStatus: Appointment['status']) => void;
   currentPlan: string;
   currentFeatures: PlanFeatures;
+  clinicName: string;
 }
 
 export default function DashboardView({
@@ -30,13 +31,14 @@ export default function DashboardView({
   onUpdateAppointmentStatus,
   currentPlan,
   currentFeatures,
+  clinicName,
 }: DashboardViewProps) {
   // Helpers to get client and service name
   const getClient = (id: string) => clients.find(c => c.id === id) || { name: 'Cliente Desconhecido', phone: '' };
   const getService = (id: string) => services.find(s => s.id === id) || { name: 'Serviço', price: 0 };
 
-  // Date constants matching local date May 28, 2026
-  const todayStr = '2026-05-28';
+  // Date constants matching local date
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
   // Computed values
   const todayAppointments = appointments.filter(a => a.date === todayStr);
@@ -78,8 +80,15 @@ export default function DashboardView({
       {/* Greeting Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-800 tracking-tight">Olá, Arthur</h2>
-          <p className="text-xs text-slate-500 mt-0.5">quinta-feira, 28 de maio de 2026</p>
+          <h2 className="text-2xl font-semibold text-slate-800 tracking-tight">Olá, {clinicName || 'Gestor'}</h2>
+          <p className="text-xs text-slate-500 mt-0.5 capitalize">
+            {new Intl.DateTimeFormat('pt-BR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }).format(new Date())}
+          </p>
         </div>
         
         <button

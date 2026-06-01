@@ -658,7 +658,7 @@ export default function App() {
     clientId: '',
     serviceId: '',
     professionalId: 'prof-1',
-    date: '2026-05-28',
+    date: new Date().toLocaleDateString('en-CA'),
     time: '12:00',
     status: 'Pendente' as Appointment['status'],
   });
@@ -691,9 +691,9 @@ export default function App() {
   // Absence State Builder
   const [newAbsence, setNewAbsence] = useState({
     professionalId: 'prof-1',
-    startDate: '2026-05-28',
+    startDate: new Date().toLocaleDateString('en-CA'),
     startTime: '08:00',
-    endDate: '2026-05-28',
+    endDate: new Date().toLocaleDateString('en-CA'),
     endTime: '12:00',
     reason: 'Consulta médica',
   });
@@ -788,6 +788,18 @@ export default function App() {
       date: new Date().toISOString().split('T')[0],
       time: '14:00',
       status: 'Pendente'
+    });
+    setModalType('appointment');
+  };
+
+  const handleOpenNewAppointment = () => {
+    setNewBooking({
+      clientId: '',
+      serviceId: services.length > 0 ? services[0].id : '',
+      professionalId: professionals[0]?.id || 'prof-1',
+      date: new Date().toLocaleDateString('en-CA'),
+      time: '12:00',
+      status: 'Pendente' as Appointment['status']
     });
     setModalType('appointment');
   };
@@ -1528,10 +1540,11 @@ export default function App() {
               theme={activePreset}
               customPrimary={customPrimary}
               onNavigateToTab={setActiveTab}
-              onOpenNewAppointment={() => setModalType('appointment')}
+              onOpenNewAppointment={handleOpenNewAppointment}
               onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
               currentPlan={activePlanName}
               currentFeatures={currentFeatures}
+              clinicName={settings.name}
             />
           )}
 
@@ -1543,9 +1556,16 @@ export default function App() {
               professionals={professionals}
               theme={activePreset}
               customPrimary={customPrimary}
-              onOpenNewAppointment={() => setModalType('appointment')}
+              onOpenNewAppointment={handleOpenNewAppointment}
               onOpenNewAppointmentWithDate={(dateString) => {
-                setNewBooking(prev => ({ ...prev, date: dateString }));
+                setNewBooking({
+                  clientId: '',
+                  serviceId: services.length > 0 ? services[0].id : '',
+                  professionalId: professionals[0]?.id || 'prof-1',
+                  date: dateString,
+                  time: '12:00',
+                  status: 'Pendente' as Appointment['status']
+                });
                 setModalType('appointment');
               }}
               onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
@@ -1572,7 +1592,14 @@ export default function App() {
                 if (appointments.length >= currentFeatures.maxAppointmentsMonth) {
                   handleShowUpgradeModal(`Agendamentos Mensais (${appointments.length}/${currentFeatures.maxAppointmentsMonth} limite atingido)`);
                 } else {
-                  setNewBooking(prev => ({ ...prev, clientId }));
+                  setNewBooking({
+                    clientId: clientId,
+                    serviceId: services.length > 0 ? services[0].id : '',
+                    professionalId: professionals[0]?.id || 'prof-1',
+                    date: new Date().toLocaleDateString('en-CA'),
+                    time: '12:00',
+                    status: 'Pendente' as Appointment['status']
+                  });
                   setModalType('appointment');
                 }
               }}
