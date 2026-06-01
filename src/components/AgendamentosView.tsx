@@ -30,8 +30,9 @@ export default function AgendamentosView({
   onEditAppointment,
 }: AgendamentosViewProps) {
   const [viewType, setViewType] = useState<'Mês' | 'Semana' | 'Dia'>('Mês');
-  const [currentYear] = useState<number>(2026);
-  const [currentMonth] = useState<number>(4); // May (0-indexed represents May in our manual render)
+  const todayDate = new Date();
+  const [currentYear, setCurrentYear] = useState<number>(2026);
+  const [currentMonth, setCurrentMonth] = useState<number>(4); // Default starts on 4 (May 2026) to preserve original design, but allows navigation
 
   // Edit mode tracking states
   const [isEditing, setIsEditing] = useState(false);
@@ -43,65 +44,77 @@ export default function AgendamentosView({
   const [editValue, setEditValue] = useState<number>(30);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const monthLabel = 'Maio 2026';
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const monthLabel = `${monthNames[currentMonth]} ${currentYear}`;
 
   // Helper selectors
   const getClient = (id: string) => clients.find(c => c.id === id) || { name: 'Cliente', phone: '' };
   const getService = (id: string) => services.find(s => s.id === id) || { name: 'Serviço', price: 0 };
   const getProfessional = (id: string) => professionals.find(p => p.id === id) || { name: 'Profissional' };
 
-  // Manual render of the layout for May 2026 shown in Image 2:
-  // We need to render days from April 26 to June 6.
-  const calendarDays = [
-    // Row 1
-    { dayNumber: 26, month: 'prev', dateString: '2026-04-26' },
-    { dayNumber: 27, month: 'prev', dateString: '2026-04-27' },
-    { dayNumber: 28, month: 'prev', dateString: '2026-04-28' },
-    { dayNumber: 29, month: 'prev', dateString: '2026-04-29' },
-    { dayNumber: 30, month: 'prev', dateString: '2026-04-30' },
-    { dayNumber: 1, month: 'curr', dateString: '2026-05-01' },
-    { dayNumber: 2, month: 'curr', dateString: '2026-05-02' },
-    // Row 2
-    { dayNumber: 3, month: 'curr', dateString: '2026-05-03' },
-    { dayNumber: 4, month: 'curr', dateString: '2026-05-04' },
-    { dayNumber: 5, month: 'curr', dateString: '2026-05-05' },
-    { dayNumber: 6, month: 'curr', dateString: '2026-05-06' },
-    { dayNumber: 7, month: 'curr', dateString: '2026-05-07' },
-    { dayNumber: 8, month: 'curr', dateString: '2026-05-08' },
-    { dayNumber: 9, month: 'curr', dateString: '2026-05-09' },
-    // Row 3
-    { dayNumber: 10, month: 'curr', dateString: '2026-05-10' },
-    { dayNumber: 11, month: 'curr', dateString: '2026-05-11' },
-    { dayNumber: 12, month: 'curr', dateString: '2026-05-12' },
-    { dayNumber: 13, month: 'curr', dateString: '2026-05-13' },
-    { dayNumber: 14, month: 'curr', dateString: '2026-05-14' },
-    { dayNumber: 15, month: 'curr', dateString: '2026-05-15' },
-    { dayNumber: 16, month: 'curr', dateString: '2026-05-16' },
-    // Row 4
-    { dayNumber: 17, month: 'curr', dateString: '2026-05-17' },
-    { dayNumber: 18, month: 'curr', dateString: '2026-05-18' },
-    { dayNumber: 19, month: 'curr', dateString: '2026-05-19' },
-    { dayNumber: 20, month: 'curr', dateString: '2026-05-20' },
-    { dayNumber: 21, month: 'curr', dateString: '2026-05-21' },
-    { dayNumber: 22, month: 'curr', dateString: '2026-05-22' },
-    { dayNumber: 23, month: 'curr', dateString: '2026-05-23' },
-    // Row 5
-    { dayNumber: 24, month: 'curr', dateString: '2026-05-24' },
-    { dayNumber: 25, month: 'curr', dateString: '2026-05-25' },
-    { dayNumber: 26, month: 'curr', dateString: '2026-05-26' },
-    { dayNumber: 27, month: 'curr', dateString: '2026-05-27' },
-    { dayNumber: 28, month: 'curr', dateString: '2026-05-28' }, // Current selection today in image
-    { dayNumber: 29, month: 'curr', dateString: '2026-05-29' },
-    { dayNumber: 30, month: 'curr', dateString: '2026-05-30' },
-    // Row 6
-    { dayNumber: 31, month: 'curr', dateString: '2026-05-31' },
-    { dayNumber: 1, month: 'next', dateString: '2026-06-01' },
-    { dayNumber: 2, month: 'next', dateString: '2026-06-02' },
-    { dayNumber: 3, month: 'next', dateString: '2026-06-03' },
-    { dayNumber: 4, month: 'next', dateString: '2026-06-04' },
-    { dayNumber: 5, month: 'next', dateString: '2026-06-05' },
-    { dayNumber: 6, month: 'next', dateString: '2026-06-06' }
-  ];
+  // Dynamically generate calendar days grid (6 weeks = 42 cells)
+  const generateDynamicCalendarDays = () => {
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+    const startDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    const prevMonthDaysList = [];
+    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const dayNum = prevMonthLastDay - i;
+      const m = currentMonth === 0 ? 11 : currentMonth - 1;
+      const y = currentMonth === 0 ? currentYear - 1 : currentYear;
+      const dateString = `${y}-${String(m + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+      prevMonthDaysList.push({ dayNumber: dayNum, month: 'prev' as const, dateString });
+    }
+
+    const currMonthDaysList = [];
+    const currMonthLastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+    for (let i = 1; i <= currMonthLastDay; i++) {
+      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      currMonthDaysList.push({ dayNumber: i, month: 'curr' as const, dateString });
+    }
+
+    const nextMonthDaysList = [];
+    const totalCells = 42;
+    const remaining = totalCells - (prevMonthDaysList.length + currMonthDaysList.length);
+    for (let i = 1; i <= remaining; i++) {
+      const m = currentMonth === 11 ? 0 : currentMonth + 1;
+      const y = currentMonth === 11 ? currentYear + 1 : currentYear;
+      const dateString = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      nextMonthDaysList.push({ dayNumber: i, month: 'next' as const, dateString });
+    }
+
+    return [...prevMonthDaysList, ...currMonthDaysList, ...nextMonthDaysList];
+  };
+
+  const calendarDays = generateDynamicCalendarDays();
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
+  const handleGoToToday = () => {
+    const today = new Date();
+    setCurrentYear(today.getFullYear());
+    setCurrentMonth(today.getMonth());
+  };
 
   const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -129,13 +142,22 @@ export default function AgendamentosView({
       <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Navigation arrow buttons */}
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-600 transition-colors">
+          <button 
+            onClick={handlePrevMonth}
+            className="p-2 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+          >
             <ChevronLeft size={16} />
           </button>
-          <button className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors">
+          <button 
+            onClick={handleGoToToday}
+            className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-100 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
             Hoje
           </button>
-          <button className="p-2 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-600 transition-colors">
+          <button 
+            onClick={handleNextMonth}
+            className="p-2 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+          >
             <ChevronRight size={16} />
           </button>
           <span className="text-sm font-semibold text-slate-700 ml-2">{monthLabel}</span>
@@ -176,7 +198,7 @@ export default function AgendamentosView({
             {calendarDays.map((cell, idx) => {
               const dayApts = appointments.filter(a => a.date === cell.dateString);
               // Check if cell is active day of chosen date YYYY-MM-DD
-              const isToday = cell.dateString === '2026-05-28';
+              const isToday = cell.dateString === new Date().toISOString().split('T')[0];
 
               return (
                 <div

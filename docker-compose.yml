@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Servidor do Banco de Dados PostgreSQL Estável
+  db:
+    image: postgres:15-alpine
+    container_name: lumini-postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: lumini_crm
+      POSTGRES_PASSWORD: LuminiSecurePassword2026_
+      POSTGRES_DB: lumini_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumini_crm -d lumini_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Aplicação Full-Stack Node Express + React (Vite)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lumini-app-server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://lumini_crm:LuminiSecurePassword2026_@db:5432/lumini_db
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Volume opcional para fallback JSON de segurança (em caso de reinício offline)
+      - app_backup_data:/usr/src/app/data
+
+volumes:
+  postgres_data:
+    driver: local
+  app_backup_data:
+    driver: local

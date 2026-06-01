@@ -50,6 +50,8 @@ export default function SuperadminView({
     allowOnlineBooking: false,
     allowFinance: false,
     allowStock: false,
+    allowCRM: false,
+    description: '',
     ...planFeatures['Grátis']
   }));
 
@@ -67,6 +69,8 @@ export default function SuperadminView({
       allowOnlineBooking: false,
       allowFinance: false,
       allowStock: false,
+      allowCRM: false,
+      description: '',
       ...(planFeatures[planName] || {})
     });
   };
@@ -533,6 +537,37 @@ export default function SuperadminView({
                       <span className="text-slate-500 text-[8px] font-sans font-medium">Gestão de produtos críticos e suprimentos</span>
                     </div>
                   </label>
+
+                  {/* Funil CRM module */}
+                  <label className="flex items-center gap-2 px-3 py-2 bg-slate-950 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+                    <input
+                      type="checkbox"
+                      checked={featuresDraft.allowCRM ?? false}
+                      onChange={(e) => handleUpdateFeaturesDraft('allowCRM', e.target.checked)}
+                      className="accent-orange-500 h-3.5 w-3.5 rounded"
+                    />
+                    <div className="text-[10px]">
+                      <span className="font-extrabold text-white block">Funil CRM e Captação</span>
+                      <span className="text-slate-500 text-[8px] font-sans font-medium">Gestão de leads, prospecção e funil de conversão</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Customizable plan functions description */}
+                <div className="space-y-1.5 pt-2.5 border-t border-slate-800/80">
+                  <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                    Texto Descritivo do Plano (Funções)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={featuresDraft.description || ''}
+                    onChange={(e) => handleUpdateFeaturesDraft('description', e.target.value)}
+                    className="w-full text-[11px] px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-sans focus:outline-none focus:border-indigo-500"
+                    placeholder="Ex: WhatsApp, 2 colaboradores, 100 clientes..."
+                  />
+                  <p className="text-[8px] text-slate-500 leading-normal">
+                    Este texto será exibido aos clientes no modal de upgrade quando este plano for visualizado.
+                  </p>
                 </div>
 
                 <button

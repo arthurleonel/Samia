@@ -195,7 +195,34 @@ export default function App() {
         // fallback
       }
     }
-    return `${window.location.origin}/${slug}`;
+
+    const qParams = new URLSearchParams();
+    if (settings && activeTenantId === tenantId) {
+      if (settings.name) qParams.set('n', settings.name);
+      if (settings.description) qParams.set('d', settings.description);
+      if (settings.address) qParams.set('a', settings.address);
+      if (settings.whatsapp) qParams.set('w', settings.whatsapp);
+      if (settings.customPrimary) qParams.set('cp', settings.customPrimary);
+      if (settings.customSecondary) qParams.set('cs', settings.customSecondary);
+      if (settings.customBackground) qParams.set('cb', settings.customBackground);
+    } else {
+      const savedSpecific = localStorage.getItem(`lumini_tenant_${tenantId}_settings`);
+      if (savedSpecific) {
+        try {
+          const parsed = JSON.parse(savedSpecific);
+          if (parsed.name) qParams.set('n', parsed.name);
+          if (parsed.description) qParams.set('d', parsed.description);
+          if (parsed.address) qParams.set('a', parsed.address);
+          if (parsed.whatsapp) qParams.set('w', parsed.whatsapp);
+          if (parsed.customPrimary) qParams.set('cp', parsed.customPrimary);
+          if (parsed.customSecondary) qParams.set('cs', parsed.customSecondary);
+          if (parsed.customBackground) qParams.set('cb', parsed.customBackground);
+        } catch (e) {}
+      }
+    }
+
+    const qStr = qParams.toString();
+    return `${window.location.origin}/${slug}${qStr ? '?' + qStr : ''}`;
   };
 
   // Tab State
@@ -212,6 +239,42 @@ export default function App() {
       if (savedLegacy) return JSON.parse(savedLegacy);
     }
     return defaultValue;
+  };
+
+  // Full-Stack DB Synchronization HTTP helpers (graceful fallbacks inside)
+  const syncTenantDataPoint = (keyType: string, list: any) => {
+    if (!activeTenantId || !loadedTenantId || loadedTenantId !== activeTenantId) return;
+    fetch(`/api/tenant/${activeTenantId}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyType, dataList: list })
+    }).catch(err => {
+      console.debug(`[Sync Debug] could not persist key ${keyType} online (using localStorage fallback):`, err.message);
+    });
+  };
+
+  const syncSaasPricing = (newPricing: any) => {
+    fetch('/api/saas/pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pricing: newPricing })
+    }).catch(() => {});
+  };
+
+  const syncSaasPlanFeatures = (newFeatures: any) => {
+    fetch('/api/saas/features', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planFeatures: newFeatures })
+    }).catch(() => {});
+  };
+
+  const syncSaasTenantsList = (newTenants: any) => {
+    fetch('/api/saas/tenants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenants: newTenants })
+    }).catch(() => {});
   };
 
   const [clients, setClients] = useState<Client[]>(() => {
@@ -231,7 +294,7 @@ export default function App() {
   });
   const [settings, setSettings] = useState<ClinicSettings>(() => {
     const activeObj = tenants.find(t => t.id === activeTenantId);
-    return getStoredItem(activeTenantId, 'settings', {
+    const base = getStoredItem(activeTenantId, 'settings', {
       ...INITIAL_CLINIC_SETTINGS,
       name: activeObj?.name || 'Leonel CRM',
       sidebarTitle: activeObj?.sidebarTitle || 'Leonel CRM',
@@ -240,6 +303,26 @@ export default function App() {
       customSecondary: '#EFE6DA',
       customBackground: '#FAFAF9',
     });
+
+    // Merge from query parameters as fallback
+    const params = new URLSearchParams(window.location.search);
+    const qName = params.get('n');
+    const qDesc = params.get('d');
+    const qAddr = params.get('a');
+    const qPhone = params.get('w');
+    const qColorP = params.get('cp');
+    const qColorS = params.get('cs');
+    const qColorB = params.get('cb');
+
+    if (qName) base.name = qName;
+    if (qDesc) base.description = qDesc;
+    if (qAddr) base.address = qAddr;
+    if (qPhone) base.whatsapp = qPhone;
+    if (qColorP) base.customPrimary = qColorP;
+    if (qColorS) base.customSecondary = qColorS;
+    if (qColorB) base.customBackground = qColorB;
+
+    return base;
   });
   const [alerts, setAlerts] = useState<UserAlert[]>(() => {
     return getStoredItem(activeTenantId, 'alerts', INITIAL_ALERTS);
@@ -283,12 +366,32 @@ export default function App() {
     ]));
     
     const activeObj = tenants.find(t => t.id === activeTenantId);
-    setSettings(getStoredItem(activeTenantId, 'settings', {
+    const storedSettings = getStoredItem(activeTenantId, 'settings', {
       ...INITIAL_CLINIC_SETTINGS,
       name: activeObj ? activeObj.name : INITIAL_CLINIC_SETTINGS.name,
       sidebarTitle: activeObj ? (activeObj.sidebarTitle || activeObj.name) : 'Leonel CRM',
       sidebarSubtitle: activeObj ? (activeObj.sidebarSubtitle || 'Estética Avançada') : 'Estética Avançada',
-    }));
+    });
+
+    // Merge from query parameters if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlName = urlParams.get('n');
+    const urlDesc = urlParams.get('d');
+    const urlAddr = urlParams.get('a');
+    const urlPhone = urlParams.get('w');
+    const urlColorP = urlParams.get('cp');
+    const urlColorS = urlParams.get('cs');
+    const urlColorB = urlParams.get('cb');
+
+    if (urlName) storedSettings.name = urlName;
+    if (urlDesc) storedSettings.description = urlDesc;
+    if (urlAddr) storedSettings.address = urlAddr;
+    if (urlPhone) storedSettings.whatsapp = urlPhone;
+    if (urlColorP) storedSettings.customPrimary = urlColorP;
+    if (urlColorS) storedSettings.customSecondary = urlColorS;
+    if (urlColorB) storedSettings.customBackground = urlColorB;
+
+    setSettings(storedSettings);
     
     setAlerts(getStoredItem(activeTenantId, 'alerts', INITIAL_ALERTS));
     setActivities(getStoredItem(activeTenantId, 'activities', INITIAL_ACTIVITIES));
@@ -309,6 +412,30 @@ export default function App() {
 
     // Update loadedTenantId to allow syncing
     setLoadedTenantId(activeTenantId);
+
+    // Asynchronously update to database records if available on the server
+    fetch(`/api/tenant/${activeTenantId}/load`)
+      .then(res => res.json())
+      .then(res => {
+        if (res.data && Object.keys(res.data).length > 0) {
+          const remote = res.data;
+          if (remote.clients) setClients(remote.clients);
+          if (remote.services) setServices(remote.services);
+          if (remote.professionals) setProfessionals(remote.professionals);
+          if (remote.appointments) setAppointments(remote.appointments);
+          if (remote.operating_hours) setOperatingHours(remote.operating_hours);
+          if (remote.settings) setSettings(remote.settings);
+          if (remote.alerts) setAlerts(remote.alerts);
+          if (remote.activities) setActivities(remote.activities);
+          if (remote.stock) setStockItems(remote.stock);
+          if (remote.transactions) setTransactions(remote.transactions);
+          if (remote.leads) setLeads(remote.leads);
+          console.debug(`[FullStack DB] Resynced state for active tenant: ${activeTenantId}`);
+        }
+      })
+      .catch((err) => {
+        console.debug('[FullStack Sync Debug] Loaded offline local tenant profile:', err.message);
+      });
   }, [activeTenantId]);
 
   // Sync state writes back to tenant boundaries
@@ -316,36 +443,42 @@ export default function App() {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !clients.length) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_clients`, JSON.stringify(clients));
+    syncTenantDataPoint('clients', clients);
   }, [clients, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !services.length) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_services`, JSON.stringify(services));
+    syncTenantDataPoint('services', services);
   }, [services, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !professionals.length) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_professionals`, JSON.stringify(professionals));
+    syncTenantDataPoint('professionals', professionals);
   }, [professionals, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !appointments.length) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_appointments`, JSON.stringify(appointments));
+    syncTenantDataPoint('appointments', appointments);
   }, [appointments, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !operatingHours.length) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_operating_hours`, JSON.stringify(operatingHours));
+    syncTenantDataPoint('operating_hours', operatingHours);
   }, [operatingHours, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !settings?.name) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_settings`, JSON.stringify(settings));
+    syncTenantDataPoint('settings', settings);
     
     setTenants(prev => prev.map(t => t.id === activeTenantId ? {
       ...t,
@@ -359,30 +492,35 @@ export default function App() {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_alerts`, JSON.stringify(alerts));
+    syncTenantDataPoint('alerts', alerts);
   }, [alerts, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_activities`, JSON.stringify(activities));
+    syncTenantDataPoint('activities', activities);
   }, [activities, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_stock`, JSON.stringify(stockItems));
+    syncTenantDataPoint('stock', stockItems);
   }, [stockItems, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_transactions`, JSON.stringify(transactions));
+    syncTenantDataPoint('transactions', transactions);
   }, [transactions, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId || !leads) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_leads`, JSON.stringify(leads));
+    syncTenantDataPoint('leads', leads);
   }, [leads, activeTenantId, loadedTenantId]);
 
   // Session storage sync
@@ -397,11 +535,59 @@ export default function App() {
   // Tenants list storage sync
   useEffect(() => {
     localStorage.setItem('lumini_tenants', JSON.stringify(tenants));
+    syncSaasTenantsList(tenants);
   }, [tenants]);
+
+  // Real-time synchronization of lists between tabs and frames to automatically mirror bookings
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.key) return;
+      if (e.key.startsWith(`lumini_tenant_${activeTenantId}_`)) {
+        const keyType = e.key.replace(`lumini_tenant_${activeTenantId}_`, '');
+        const storedStr = localStorage.getItem(e.key);
+        if (!storedStr) return;
+        
+        try {
+          const parsed = JSON.parse(storedStr);
+          if (keyType === 'clients') {
+            setClients(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'services') {
+            setServices(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'professionals') {
+            setProfessionals(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'appointments') {
+            setAppointments(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'operating_hours') {
+            setOperatingHours(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'leads') {
+            setLeads(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'settings') {
+            setSettings(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'alerts') {
+            setAlerts(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'activities') {
+            setActivities(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'stock') {
+            setStockItems(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          } else if (keyType === 'transactions') {
+            setTransactions(prev => JSON.stringify(prev) !== storedStr ? parsed : prev);
+          }
+        } catch (err) {
+          // ignore parse/empty errors
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [activeTenantId]);
 
   // Pricing storage sync
   useEffect(() => {
     localStorage.setItem('lumini_plans_pricing', JSON.stringify(pricing));
+    syncSaasPricing(pricing);
   }, [pricing]);
 
   // Plan Features Config and customization (SaaS control, can be managed in Superadmin)
@@ -420,6 +606,8 @@ export default function App() {
         allowOnlineBooking: false,
         allowFinance: false,
         allowStock: false,
+        allowCRM: false,
+        description: 'Limite de 5 atendimentos e 15 clientes cadastrados.',
       },
       'Profissional': {
         maxAppointmentsMonth: 9999,
@@ -432,6 +620,8 @@ export default function App() {
         allowOnlineBooking: true,
         allowFinance: true,
         allowStock: true,
+        allowCRM: true,
+        description: 'WhatsApp, CRM, 2 colaboradores, 100 clientes e disparo rápido.',
       },
       'Clínica': {
         maxAppointmentsMonth: 9999,
@@ -444,12 +634,15 @@ export default function App() {
         allowOnlineBooking: true,
         allowFinance: true,
         allowStock: true,
+        allowCRM: true,
+        description: 'Multi-Agenda, ausências, Funil CRM, agendamento online livre e gestão ilimitada.',
       }
     };
   });
 
   useEffect(() => {
     localStorage.setItem('lumini_plans_features', JSON.stringify(planFeatures));
+    syncSaasPlanFeatures(planFeatures);
   }, [planFeatures]);
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -633,27 +826,68 @@ export default function App() {
     date: string;
     time: string;
     value: number;
+    isNewClient: boolean;
+    notes?: string;
   }) => {
     // 1. Check if client exists by phone
     const normalizedPhone = bookingData.clientPhone.replace(/\D/g, '');
     let existingC = clients.find(c => c.phone.replace(/\D/g, '') === normalizedPhone);
     let finalClientId = existingC?.id;
 
-    if (!existingC) {
-      // Create new client
-      const newId = generateUniqueId('cli');
+    if (bookingData.isNewClient) {
+      // Create new Lead in the CRM funil
+      const newLead: Lead = {
+        id: generateUniqueId('lead'),
+        tenantId: activeTenantId,
+        name: bookingData.clientName,
+        phone: bookingData.clientPhone,
+        email: bookingData.clientEmail,
+        stage: 'novo',
+        value: bookingData.value,
+        interestServiceId: bookingData.serviceId,
+        notes: bookingData.notes || `Agendamento solicitado pelo Link Público para dia ${bookingData.date} às ${bookingData.time}`,
+        createdAt: new Date().toISOString()
+      };
+      setLeads(prev => [newLead, ...prev]);
+
+      // Create client too so they can be associated with the pending appointment
+      const newCliId = generateUniqueId('cli');
       const newC: Client = {
-        id: newId,
+        id: newCliId,
         name: bookingData.clientName,
         phone: bookingData.clientPhone,
         email: bookingData.clientEmail,
         birthdate: '',
         address: '',
-        notes: 'Cliente cadastrado via agendamento online público.'
+        notes: `Lead do Link Público - Agendamento Solicitado.`
       };
       setClients(prev => [...prev, newC]);
-      finalClientId = newId;
+      finalClientId = newCliId;
+
+      logActivity(`Novo LEAD no funil CRM: "${bookingData.clientName}" registrado via Link de Agendamento!`);
+    } else {
+      if (!existingC) {
+        // Create new client if not matched
+        const newId = generateUniqueId('cli');
+        const newC: Client = {
+          id: newId,
+          name: bookingData.clientName,
+          phone: bookingData.clientPhone,
+          email: bookingData.clientEmail,
+          birthdate: '',
+          address: '',
+          notes: 'Cliente cadastrado via agendamento online público.'
+        };
+        setClients(prev => [...prev, newC]);
+        finalClientId = newId;
+      }
     }
+
+    // Determine status of the appointment based on requireConfirmation setting
+    // If it's a new lead, it should always start as Pendente.
+    // If it's an existing client, respect the settings configuration toggle.
+    const mustConfirm = bookingData.isNewClient || settings.requireConfirmation !== false;
+    const initialStatus: Appointment['status'] = mustConfirm ? 'Pendente' : 'Confirmado';
 
     // 2. Add appointment
     const targetService = services.find(s => s.id === bookingData.serviceId);
@@ -665,14 +899,14 @@ export default function App() {
       professionalId: bookingData.professionalId,
       date: bookingData.date,
       time: bookingData.time,
-      status: 'Pendente',
+      status: initialStatus,
       value: bookingData.value || servicePrice,
       createdAt: new Date().toISOString()
     };
     setAppointments(prev => [...prev, newApt]);
 
     // 3. Log activity
-    logActivity(`Novo agendamento online: ${bookingData.clientName} preencheu para o dia ${bookingData.date} às ${bookingData.time}`);
+    logActivity(`Novo agendamento online [${initialStatus}]: ${bookingData.clientName} agendou para o dia ${bookingData.date} às ${bookingData.time}`);
   };
 
   // Add client submit helper
@@ -919,6 +1153,7 @@ export default function App() {
         services={services}
         operatingHours={operatingHours}
         professionals={professionals}
+        appointments={appointments}
         onConfirmBooking={handlePublicConfirmBooking}
       />
     );
@@ -998,11 +1233,14 @@ export default function App() {
     allowOnlineBooking: false,
     allowFinance: false,
     allowStock: false,
+    allowCRM: false,
+    description: 'Limite de 5 atendimentos e 15 clientes cadastrados.',
   };
 
   const currentFeatures: PlanFeatures = {
     allowFinance: false,
     allowStock: false,
+    allowCRM: false,
     ...rawFeatures
   };
 
@@ -1369,17 +1607,40 @@ export default function App() {
           )}
 
           {activeTab === 'leads_crm' && (
-            <LeadsView 
-              leads={leads}
-              services={services}
-              theme={activePreset}
-              customPrimary={customPrimary}
-              onAddLead={handleAddLead}
-              onUpdateLeadStage={handleUpdateLeadStage}
-              onUpdateLead={handleUpdateLead}
-              onDeleteLead={handleDeleteLead}
-              onConvertToClientAndSchedule={handleConvertToClientAndSchedule}
-            />
+            <div className="relative h-full w-full">
+              {!currentFeatures.allowCRM && (
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center p-8 text-center bg-slate-50/70 backdrop-blur-[2px] rounded-3xl border border-slate-100 min-h-[460px] text-slate-700">
+                  <div className="max-w-sm p-6 bg-white rounded-3xl border border-slate-150 shadow-xl space-y-4">
+                    <span className="inline-flex p-3 bg-amber-50 rounded-full text-orange-600">
+                      <Columns size={24} />
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Funil de Leads CRM Bloqueado</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Gerencie e converta leads interessados em tratamentos estéticos. Controle etapas de captação e agende atendimentos com total rastreabilidade. Disponível a partir do plano <strong>Profissional</strong>.
+                    </p>
+                    <button
+                      onClick={() => handleShowUpgradeModal('Funil de Leads CRM')}
+                      className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-500/10"
+                    >
+                      Liberar Funil CRM ⚡
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className={`h-full w-full ${!currentFeatures.allowCRM ? 'blur-[1.5px] pointer-events-none select-none' : ''}`}>
+                <LeadsView 
+                  leads={leads}
+                  services={services}
+                  theme={activePreset}
+                  customPrimary={customPrimary}
+                  onAddLead={handleAddLead}
+                  onUpdateLeadStage={handleUpdateLeadStage}
+                  onUpdateLead={handleUpdateLead}
+                  onDeleteLead={handleDeleteLead}
+                  onConvertToClientAndSchedule={handleConvertToClientAndSchedule}
+                />
+              </div>
+            </div>
           )}
 
           {activeTab === 'servicos' && (
@@ -2758,7 +3019,9 @@ export default function App() {
                 >
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-extrabold text-slate-900 block">Profissional</span>
-                    <span className="text-[8px] text-slate-500 tracking-tight leading-normal max-w-44 block">WhatsApp, 2 colaboradores, 100 clientes e disparo rápido.</span>
+                    <span className="text-[8px] text-slate-500 tracking-tight leading-normal max-w-44 block">
+                      {planFeatures['Profissional']?.description || 'WhatsApp, CRM, 2 colaboradores, 100 clientes e disparo rápido.'}
+                    </span>
                   </div>
                   <span className="text-right whitespace-nowrap shrink-0 font-mono">
                     <strong className="text-xs text-indigo-700 font-bold block">R$ {pricing.Profissional || 67}</strong>
@@ -2777,7 +3040,9 @@ export default function App() {
                 >
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-extrabold text-indigo-100 block">Clínica 👑</span>
-                    <span className="text-[8px] text-slate-300 tracking-tight leading-normal max-w-44 block">Multi-Agenda, ausências, agendamento online livre e gestão ilimitada.</span>
+                    <span className="text-[8px] text-slate-300 tracking-tight leading-normal max-w-44 block">
+                      {planFeatures['Clínica']?.description || 'Multi-Agenda, ausências, agendamento online livre e gestão ilimitada.'}
+                    </span>
                   </div>
                   <span className="text-right whitespace-nowrap shrink-0 font-mono">
                     <strong className="text-xs text-amber-400 font-bold block">R$ {pricing.Clínica || 147}</strong>

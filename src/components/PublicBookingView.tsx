@@ -7,6 +7,7 @@ interface PublicBookingViewProps {
   services: Service[];
   operatingHours: OperatingHour[];
   professionals: Professional[];
+  appointments: Appointment[];
   onConfirmBooking: (bookingData: {
     clientName: string;
     clientPhone: string;
@@ -16,6 +17,8 @@ interface PublicBookingViewProps {
     date: string;
     time: string;
     value: number;
+    isNewClient: boolean;
+    notes?: string;
   }) => void;
 }
 
@@ -24,6 +27,7 @@ export default function PublicBookingView({
   services,
   operatingHours,
   professionals,
+  appointments,
   onConfirmBooking,
 }: PublicBookingViewProps) {
   const activeServices = services.filter(s => s.status === 'Ativo' && s.visibleInBooking);
@@ -36,6 +40,7 @@ export default function PublicBookingView({
   const [selectedTime, setSelectedTime] = useState('');
   
   // Client info state
+  const [isNewClient, setIsNewClient] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -109,6 +114,8 @@ export default function PublicBookingView({
       date: selectedDate,
       time: selectedTime,
       value: price,
+      isNewClient,
+      notes: clientNotes,
     });
 
     setConfirmedDetails({
@@ -206,7 +213,7 @@ export default function PublicBookingView({
 
           <div className="border-t pt-4 border-slate-100 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
             <Award size={13} className="text-indigo-400" />
-            <span>Leonel CRM · Sistema de Estética</span>
+            <span>{settings.name || 'Leonel CRM'} · Sistema de Estética</span>
           </div>
         </div>
       </div>
@@ -407,16 +414,27 @@ export default function PublicBookingView({
                       <div className="grid grid-cols-4 gap-2 max-h-[150px] overflow-y-auto pr-1 no-scrollbar">
                         {timeSlots.map((time) => {
                           const isSelectedSlot = selectedTime === time;
+                          const isBooked = appointments && appointments.some(apt => 
+                            apt.date === selectedDate && 
+                            apt.professionalId === selectedProfessionalId &&
+                            apt.time === time
+                          );
                           return (
                             <button
                               key={time}
                               type="button"
+                              disabled={isBooked}
                               onClick={() => setSelectedTime(time)}
-                              style={{ borderColor: isSelectedSlot ? primaryColor : '', color: isSelectedSlot ? primaryColor : '' }}
-                              className={`py-2 text-center font-bold text-xs rounded-xl border font-mono tracking-wide transition-all cursor-pointer ${
-                                isSelectedSlot 
-                                  ? 'bg-indigo-50/30 font-extrabold' 
-                                  : 'border-slate-150 text-slate-600 bg-white hover:border-slate-350 hover:bg-slate-50/50'
+                              style={{ 
+                                borderColor: isSelectedSlot && !isBooked ? primaryColor : '', 
+                                color: isSelectedSlot && !isBooked ? primaryColor : '' 
+                              }}
+                              className={`py-2 text-center font-bold text-xs rounded-xl border font-mono tracking-wide transition-all ${
+                                isBooked
+                                  ? 'bg-slate-100 border-slate-200 text-slate-300 line-through opacity-50 cursor-not-allowed'
+                                  : isSelectedSlot 
+                                    ? 'bg-indigo-50/30 font-extrabold' 
+                                    : 'border-slate-150 text-slate-600 bg-white hover:border-slate-350 hover:bg-slate-50/50 cursor-pointer'
                               }`}
                             >
                               {time}
@@ -457,9 +475,41 @@ export default function PublicBookingView({
               </button>
 
               <div className="space-y-2.5">
+                {/* Segmented control for Customer Type */}
+                <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewClient(false)}
+                    className={`flex-1 py-2 text-center text-[10px] uppercase font-extrabold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
+                      !isNewClient 
+                        ? 'bg-white text-slate-800 shadow-xs' 
+                        : 'text-slate-450 hover:text-slate-700'
+                    }`}
+                  >
+                    Já sou Cliente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewClient(true)}
+                    className={`flex-1 py-1.5 text-center text-[10px] uppercase font-extrabold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
+                      isNewClient 
+                        ? 'bg-white text-slate-800 shadow-xs' 
+                        : 'text-slate-450 hover:text-slate-700'
+                    }`}
+                  >
+                    👋 Sou novo por aqui
+                  </button>
+                </div>
+
                 <div className="space-y-1">
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Insira seus dados para contato</h3>
-                  <p className="text-[11px] text-slate-455">Utilizaremos essas informações para confirmar seu agendamento e enviar lembretes.</p>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                    {isNewClient ? 'Cadastrar Minha Negociação' : 'Insira seus dados para contato'}
+                  </h3>
+                  <p className="text-[11px] text-slate-455">
+                    {isNewClient 
+                      ? 'Preencha seus dados de contato para entrar diretamente no funil de negociações CRM da clínica.'
+                      : 'Utilizaremos essas informações para localizar seu cadastro e agendar o procedimento.'}
+                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -551,7 +601,7 @@ export default function PublicBookingView({
       {/* Footer System Credits */}
       <span className="text-[10px] text-slate-400 mt-6 select-none flex items-center gap-1">
         <span>Sistema de agendamento seguro fornecido por</span>
-        <strong className="text-slate-500 font-semibold font-sans">Leonel CRM</strong>
+        <strong className="text-slate-500 font-semibold font-sans">{settings.name || 'Leonel CRM'}</strong>
       </span>
     </div>
   );

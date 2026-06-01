@@ -76,6 +76,7 @@ export interface ClinicSettings {
   customBackground: string;
   sidebarTitle?: string;
   sidebarSubtitle?: string;
+  requireConfirmation?: boolean;
 }
 
 export interface UserAlert {
@@ -102,6 +103,8 @@ export interface PlanFeatures {
   allowOnlineBooking: boolean;
   allowFinance: boolean;
   allowStock: boolean;
+  allowCRM?: boolean;
+  description?: string;
 }
 
 export type LeadStage = 'novo' | 'negociacao' | 'pendente_agendamento' | 'ganho' | 'arquivado';

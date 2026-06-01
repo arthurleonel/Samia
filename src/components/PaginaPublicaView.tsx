@@ -204,6 +204,28 @@ export default function PaginaPublicaView({
             </div>
           </div>
 
+          {/* Regras e Segurança do Agendamento */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs space-y-4">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b pb-2">Regras de Agendamento & Segurança</h3>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-150">
+              <div className="space-y-0.5 text-left flex-1">
+                <label className="text-xs font-bold text-slate-800 font-sans block">Exigir Confirmação de Clientes Cadastrados</label>
+                <p className="text-[10px] text-slate-400 font-sans">
+                  Se ativado, os agendamentos de clientes já cadastrados iniciarão como <strong className="text-amber-600 font-bold">Pendente</strong> e precisarão ser aprovados manualmente na sua agenda para evitar trotes ou agendamentos falsos. Se desativado, entrarão direto como <strong className="text-indigo-500 font-bold">Confirmado</strong>.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input 
+                  type="checkbox" 
+                  checked={settings.requireConfirmation !== false} 
+                  onChange={(e) => onUpdateSettings({ requireConfirmation: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+          </div>
+
           {/* Color & Theme Picker Customizer */}
           <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs space-y-4">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b pb-2 flex items-center gap-1">
