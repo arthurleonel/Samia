@@ -8,9 +8,22 @@ import { createServer as createViteServer } from 'vite';
 
 const { Pool } = pg;
 
-// Support dual-mode path resolution
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Support dual-mode path resolution (both ESM dev and CJS bundle prod)
+let resolvedFilename = '';
+let resolvedDirname = '';
+
+try {
+  if (typeof import.meta !== 'undefined' && import.meta.url) {
+    resolvedFilename = fileURLToPath(import.meta.url);
+    resolvedDirname = path.dirname(resolvedFilename);
+  }
+} catch (e) {
+  // Graceful fallback
+}
+
+// Safely bind helper paths to avoid shadowing global __filename/__dirname and provoking compiler TDZ errors
+export const _filename = resolvedFilename || (typeof __filename !== 'undefined' ? __filename : '');
+export const _dirname = resolvedDirname || (typeof __dirname !== 'undefined' ? __dirname : process.cwd());
 
 const app = express();
 const PORT = 3000;
