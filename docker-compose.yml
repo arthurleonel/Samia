@@ -10,8 +10,11 @@ services:
       POSTGRES_USER: lumini_crm
       POSTGRES_PASSWORD: LuminiSecurePassword2026_
       POSTGRES_DB: lumini_db
-    ports:
-      - "5432:5432"
+    # Não expomos a porta 5432 para o hospedeiro (host) para evitar conflitos na VPS se já houver um PostgreSQL rodando,
+    # e também por motivos de segurança. A aplicação se comunica internamente dentro da rede do Docker na porta 5432.
+    # Caso queira acessar o banco externamente da VPS, descomente a linha abaixo:
+    # ports:
+    #   - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
