@@ -31,7 +31,8 @@ services:
     container_name: lumini-app-server
     restart: always
     ports:
-      - "3000:3000"
+      # Modificado para usar a variável APP_PORT ou padrão 3003 para evitar conflitos na VPS se a porta 3000 já estiver ocupada
+      - "${APP_PORT:-3003}:3000"
     environment:
       - DATABASE_URL=postgresql://lumini_crm:LuminiSecurePassword2026_@db:5432/lumini_db
       - NODE_ENV=production
