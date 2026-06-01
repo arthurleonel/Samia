@@ -331,24 +331,13 @@ export default function App() {
     return getStoredItem(activeTenantId, 'activities', INITIAL_ACTIVITIES);
   });
   const [stockItems, setStockItems] = useState<{ id: string; name: string; qty: number; minQty: number; unit: string; price: number; }[]>(() => {
-    return getStoredItem(activeTenantId, 'stock_items', [
-      { id: 'st-1', name: 'Preenchedor Hialurônico Ultra', qty: 12, minQty: 5, unit: 'ml', price: 180 },
-      { id: 'st-2', name: 'Toxina Botulínica Dysport', qty: 4, minQty: 2, unit: 'ampolas', price: 450 },
-      { id: 'st-3', name: 'Agulhas Canuladas 22G', qty: 3, minQty: 10, unit: 'unidades', price: 15 },
-    ]);
+    return getStoredItem(activeTenantId, 'stock_items', []);
   });
   const [transactions, setTransactions] = useState<{ id: string; desc: string; type: string; value: number; date: string; clientName?: string; }[]>(() => {
-    return getStoredItem(activeTenantId, 'transactions', [
-      { id: 'tx-1', desc: 'Atendimento Limpeza de Pele - Arthur Leonel', type: 'receita', value: 30.00, date: '2026-05-28', clientName: 'Arthur Leonel' },
-      { id: 'tx-2', desc: 'Compra de Material - Agulhas Canuladas', type: 'despesa', value: 150.00, date: '2026-05-27' },
-    ]);
+    return getStoredItem(activeTenantId, 'transactions', []);
   });
   const [leads, setLeads] = useState<Lead[]>(() => {
-    return getStoredItem(activeTenantId, 'leads', [
-      { id: 'ld-1', tenantId: activeTenantId, name: 'Gabriela Ribeiro', phone: '(48) 99122-3344', email: 'gabriela@email.com', stage: 'novo', value: 180.00, interestServiceId: 'srv-1', notes: 'Entrou em contato pelo Instagram. Quer tirar dúvidas sobre Limpeza de Pele.', createdAt: new Date().toISOString() },
-      { id: 'ld-2', tenantId: activeTenantId, name: 'Bruna Medeiros', phone: '(48) 99636-7442', email: 'bruna@email.com', stage: 'negociacao', value: 350.00, interestServiceId: 'srv-2', notes: 'Quer marcar Peeling Químico mas tem recepção a alergias. Explicamos o procedimento suave.', createdAt: new Date().toISOString() },
-      { id: 'ld-3', tenantId: activeTenantId, name: 'Camila Borges', phone: '(48) 99821-2233', email: 'camila@email.com', stage: 'pendente_agendamento', value: 120.00, interestServiceId: 'srv-3', notes: 'Tem interesse em Drenagem. Enviamos o link de agendamento online público para ela escolher na sexta.', createdAt: new Date().toISOString() },
-    ]);
+    return getStoredItem(activeTenantId, 'leads', []);
   });
 
   // Load state whenever the tenantId transforms
@@ -359,11 +348,7 @@ export default function App() {
     setAppointments(getStoredItem(activeTenantId, 'appointments', INITIAL_APPOINTMENTS));
     setOperatingHours(getStoredItem(activeTenantId, 'operating_hours', INITIAL_OPERATING_HOURS));
     
-    setLeads(getStoredItem(activeTenantId, 'leads', [
-      { id: 'ld-1', tenantId: activeTenantId, name: 'Gabriela Ribeiro', phone: '(48) 99122-3344', email: 'gabriela@email.com', stage: 'novo', value: 180.00, interestServiceId: 'srv-1', notes: 'Entrou em contato pelo Instagram. Quer tirar dúvidas sobre Limpeza de Pele.', createdAt: new Date().toISOString() },
-      { id: 'ld-2', tenantId: activeTenantId, name: 'Bruna Medeiros', phone: '(48) 99636-7442', email: 'bruna@email.com', stage: 'negociacao', value: 350.00, interestServiceId: 'srv-2', notes: 'Quer marcar Peeling Químico mas tem recepção a alergias. Explicamos o procedimento suave.', createdAt: new Date().toISOString() },
-      { id: 'ld-3', tenantId: activeTenantId, name: 'Camila Borges', phone: '(48) 99821-2233', email: 'camila@email.com', stage: 'pendente_agendamento', value: 120.00, interestServiceId: 'srv-3', notes: 'Tem interesse em Drenagem. Enviamos o link de agendamento online público para ela escolher na sexta.', createdAt: new Date().toISOString() },
-    ]));
+    setLeads(getStoredItem(activeTenantId, 'leads', []));
     
     const activeObj = tenants.find(t => t.id === activeTenantId);
     const storedSettings = getStoredItem(activeTenantId, 'settings', {
@@ -396,19 +381,9 @@ export default function App() {
     setAlerts(getStoredItem(activeTenantId, 'alerts', INITIAL_ALERTS));
     setActivities(getStoredItem(activeTenantId, 'activities', INITIAL_ACTIVITIES));
     
-    setStockItems(getStoredItem(activeTenantId, 'stock', [
-      { id: 'st-1', name: 'Preenchedor Hialurônico (Lote B)', qty: 2, minQty: 5, unit: 'seringa', price: 90.00 },
-      { id: 'st-2', name: 'Toxina Botulínica 100UI', qty: 12, minQty: 4, unit: 'frasco', price: 110.00 },
-      { id: 'st-3', name: 'Creme Anestésico 100g', qty: 3, minQty: 2, unit: 'bisnaga', price: 15.00 },
-      { id: 'st-4', name: 'Kit Agulhas Descartáveis', qty: 50, minQty: 20, unit: 'caixa', price: 5.00 }
-    ]));
+    setStockItems(getStoredItem(activeTenantId, 'stock', []));
     
-    setTransactions(getStoredItem(activeTenantId, 'transactions', [
-      { id: 'tx-1', desc: 'Atendimento: Arthur Leonel (Harmonização)', type: 'receita', value: 1200.00, date: '2026-05-27', clientName: 'Arthur Leonel' },
-      { id: 'tx-2', desc: 'Compra insumos: preenchedor lote B', type: 'despesa', value: 450.00, date: '2026-05-25', clientName: '' },
-      { id: 'tx-3', desc: 'Atendimento: Arthur Leonel (Limpeza de pele)', type: 'receita', value: 30.00, date: '2026-05-28', clientName: 'Arthur Leonel' },
-      { id: 'tx-4', desc: 'Atendimento: Arthur Leonel (Limpeza de pele)', type: 'receita', value: 30.00, date: '2026-05-28', clientName: 'Arthur Leonel' }
-    ]));
+    setTransactions(getStoredItem(activeTenantId, 'transactions', []));
 
     // Update loadedTenantId to allow syncing
     setLoadedTenantId(activeTenantId);

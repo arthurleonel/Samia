@@ -1,25 +1,6 @@
 import { Client, Service, Professional, Appointment, OperatingHour, ThemePreset, ClinicSettings, UserAlert, RecentActivity } from './types';
 
-export const INITIAL_CLIENTS: Client[] = [
-  {
-    id: 'cli-1',
-    name: 'arthur',
-    phone: '48996367442',
-    email: 'arthur@exemplo.com',
-    birthdate: '1995-08-15',
-    address: 'Rua Principal, 123, Centro',
-    notes: 'Pele com tendência a acne, prefere produtos calmantes.'
-  },
-  {
-    id: 'cli-2',
-    name: 'Arthur Leonel',
-    phone: '(48) 99636-7442',
-    email: 'arthur.leonel@exemplo.com',
-    birthdate: '1990-03-22',
-    address: 'Av. Paulista, 1200, Bela Vista',
-    notes: 'Alergia a álcool salicílico. Realizou última limpeza em março.'
-  }
-];
+export const INITIAL_CLIENTS: Client[] = [];
 
 export const INITIAL_SERVICES: Service[] = [
   {
@@ -59,41 +40,7 @@ export const INITIAL_PROFESSIONALS: Professional[] = [
   }
 ];
 
-export const INITIAL_APPOINTMENTS: Appointment[] = [
-  {
-    id: 'apt-1',
-    clientId: 'cli-1',
-    serviceId: 'srv-1',
-    professionalId: 'prof-1',
-    date: '2026-05-28',
-    time: '09:00',
-    status: 'Pendente',
-    value: 30.00,
-    createdAt: '2026-05-28T14:38:00Z'
-  },
-  {
-    id: 'apt-2',
-    clientId: 'cli-1',
-    serviceId: 'srv-1',
-    professionalId: 'prof-1',
-    date: '2026-05-28',
-    time: '11:50',
-    status: 'Pendente',
-    value: 30.00,
-    createdAt: '2026-05-28T14:39:00Z'
-  },
-  {
-    id: 'apt-3',
-    clientId: 'cli-2',
-    serviceId: 'srv-1',
-    professionalId: 'prof-1',
-    date: '2026-05-29',
-    time: '13:00',
-    status: 'Confirmado',
-    value: 30.00,
-    createdAt: '2026-05-28T14:42:00Z'
-  }
-];
+export const INITIAL_APPOINTMENTS: Appointment[] = [];
 
 export const INITIAL_OPERATING_HOURS: OperatingHour[] = [
   { day: 'Segunda-feira', enabled: true, start: '08:00', end: '18:00' },
@@ -177,13 +124,6 @@ export const INITIAL_CLINIC_SETTINGS: ClinicSettings = {
   sidebarSubtitle: 'Estética Avançada',
 };
 
-export const INITIAL_ALERTS: UserAlert[] = [
-  { id: 'al-1', title: 'Estoque Baixo', description: 'Preenchedor Hialurônico (Lote B) com apenas 2 unidades.', type: 'danger' },
-  { id: 'al-2', title: 'Pós-procedimento', description: 'Enviar mensagem de verificação pós-venda para Ana Clara.', type: 'info' }
-];
+export const INITIAL_ALERTS: UserAlert[] = [];
 
-export const INITIAL_ACTIVITIES: RecentActivity[] = [
-  { id: 'ac-1', text: 'Arthur Leonel agendou limpeza de pele para 28/05/2026 às 13:00', timeAgo: 'há 4 minutos' },
-  { id: 'ac-2', text: 'arthur agendou limpeza de pele para 28/05/2026 às 11:50', timeAgo: 'há 7 minutos' },
-  { id: 'ac-3', text: 'arthur agendou limpeza de pele para 28/05/2026 às 09:00', timeAgo: 'há 8 minutos' }
-];
+export const INITIAL_ACTIVITIES: RecentActivity[] = [];
