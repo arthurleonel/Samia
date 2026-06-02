@@ -183,18 +183,19 @@ export default function AgendamentosView({
 
       {viewType === 'Mês' ? (
         /* Calendar month grid exactly matching May 2026 UI */
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
-          {/* Weekday headers */}
-          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
-            {weekdays.map(day => (
-              <div key={day} className="py-3 text-center text-[10px] font-bold font-mono text-slate-400 uppercase tracking-widest">
-                {day}
-              </div>
-            ))}
-          </div>
+        <div className="w-full overflow-x-auto no-scrollbar">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden min-w-[720px]">
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
+              {weekdays.map(day => (
+                <div key={day} className="py-3 text-center text-[10px] font-bold font-mono text-slate-400 uppercase tracking-widest">
+                  {day}
+                </div>
+              ))}
+            </div>
 
-          {/* Day squares */}
-          <div className="grid grid-cols-7 grid-rows-6 auto-rows-fr divide-x divide-y divide-slate-100">
+            {/* Day squares */}
+            <div className="grid grid-cols-7 grid-rows-6 auto-rows-fr divide-x divide-y divide-slate-100">
             {calendarDays.map((cell, idx) => {
               const dayApts = appointments.filter(a => a.date === cell.dateString);
               // Check if cell is active day of chosen date YYYY-MM-DD
@@ -254,6 +255,7 @@ export default function AgendamentosView({
               );
             })}
           </div>
+        </div>
         </div>
       ) : (
         /* Weekly/Daily simple fallback view with gorgeous modern timeline visual */

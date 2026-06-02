@@ -26,7 +26,7 @@ import { Shield } from 'lucide-react';
 // Icons
 import { 
   LayoutDashboard, Calendar, Users, Sparkles, UserCheck, Clock, TrendingUp, Package, 
-  MessageSquare, Eye, Award, Copy, Check, LogOut, ChevronRight, X, Plus, AlertCircle, DollarSign, Columns
+  MessageSquare, Eye, Award, Copy, Check, LogOut, ChevronRight, X, Plus, AlertCircle, DollarSign, Columns, Menu
 } from 'lucide-react';
 
 function generateUniqueId(prefix: string): string {
@@ -217,6 +217,7 @@ export default function App() {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Load / Partition storage elements safely
   const getStoredItem = (activeId: string, key: string, defaultValue: any) => {
@@ -1296,40 +1297,23 @@ export default function App() {
     ...rawFeatures
   };
 
-  return (
-    <div className="flex flex-col h-screen w-full overflow-hidden">
-      {session?.impersonated && (
-        <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white px-8 py-2.5 text-[10px] font-black uppercase tracking-wider flex items-center justify-between shadow-md relative z-50 animate-pulse font-sans">
-          <span>⚠️ Modo Simulação: Você está visualizando e editando a clínica "{activeTenantObj?.name}" como Administrador.</span>
-          <button
-            onClick={() => {
-              setSession({ role: 'admin' });
-              setActiveTab('dashboard');
-            }}
-            className="px-3 py-1 bg-white hover:bg-slate-100 text-orange-700 font-extrabold rounded-lg uppercase tracking-widest text-[8px] transition-all cursor-pointer border border-transparent"
-          >
-            Voltar para Superadmin
-          </button>
-        </div>
-      )}
-      
-      <div className="flex h-full w-full overflow-hidden font-sans" style={{ backgroundColor: customBackground }}>
-      {/* LEFT STATIC NAVIGATION SIDEBAR */}
-      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col justify-between shrink-0 h-full">
+  const renderSidebarContents = (onItemClick?: () => void) => {
+    return (
+      <div className="flex flex-col justify-between h-full bg-white select-none">
         {/* Core Clinic Title Head */}
-        <div className="p-6">
-          <div className="flex items-center gap-2">
+        <div className="p-5 border-b border-slate-50">
+          <div className="flex items-center gap-2.5">
             <span 
-              className="w-8 h-8 rounded-xl font-black text-sm text-white flex items-center justify-center italic shrink-0"
+              className="w-10 h-10 rounded-2xl font-black text-sm text-white flex items-center justify-center italic shrink-0 shadow-sm"
               style={{ backgroundColor: customPrimary }}
             >
               {(settings.sidebarTitle || 'Leonel CRM')[0].toUpperCase()}
             </span>
             <div className="min-w-0">
-              <h1 className="text-xs font-extrabold tracking-tight text-slate-800 uppercase leading-none truncate" title={settings.sidebarTitle || 'Leonel CRM'}>
+              <h1 className="text-[13px] font-black tracking-tight text-slate-800 uppercase leading-none truncate" title={settings.sidebarTitle || 'Leonel CRM'}>
                 {settings.sidebarTitle || 'Leonel CRM'}
               </h1>
-              <span className="text-[9px] text-slate-400 font-mono tracking-widest uppercase mt-1 block truncate" title={settings.sidebarSubtitle || 'Estética Avançada'}>
+              <span className="text-[9px] text-slate-450 font-mono tracking-widest uppercase mt-1 block truncate" title={settings.sidebarSubtitle || 'Estética Avançada'}>
                 {settings.sidebarSubtitle || 'Estética Avançada'}
               </span>
             </div>
@@ -1337,160 +1321,160 @@ export default function App() {
         </div>
 
         {/* Dynamic Nav link Items */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar py-2">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar py-3.5">
           {/* PAINEL GERAL */}
           <button 
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => { setActiveTab('dashboard'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'dashboard' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <LayoutDashboard size={15} className="mr-3 text-slate-400" />
+            <LayoutDashboard size={15} className="mr-3 text-slate-400 shrink-0" />
             Painel Geral
           </button>
 
           {/* AGENDA */}
           <button 
-            onClick={() => setActiveTab('agendamentos')}
+            onClick={() => { setActiveTab('agendamentos'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'agendamentos' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Calendar size={15} className="mr-3 text-slate-400" />
+            <Calendar size={15} className="mr-3 text-slate-400 shrink-0" />
             Agenda
           </button>
 
           {/* PACIENTES */}
           <button 
-            onClick={() => setActiveTab('clientes')}
+            onClick={() => { setActiveTab('clientes'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'clientes' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Users size={15} className="mr-3 text-slate-400" />
+            <Users size={15} className="mr-3 text-slate-400 shrink-0" />
             Pacientes
           </button>
 
           {/* FUNIL DE LEADS CRM */}
           <button 
-            onClick={() => setActiveTab('leads_crm')}
+            onClick={() => { setActiveTab('leads_crm'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'leads_crm' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Columns size={15} className="mr-3 text-slate-400" />
+            <Columns size={15} className="mr-3 text-slate-400 shrink-0" />
             Leads / Funil CRM
           </button>
 
           {/* TRATAMENTOS */}
           <button 
-            onClick={() => setActiveTab('servicos')}
+            onClick={() => { setActiveTab('servicos'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'servicos' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Sparkles size={15} className="mr-3 text-slate-400" />
+            <Sparkles size={15} className="mr-3 text-slate-400 shrink-0" />
             Tratamentos
           </button>
 
           {/* EQUIPE */}
           <button 
-            onClick={() => setActiveTab('equipe')}
+            onClick={() => { setActiveTab('equipe'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'equipe' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <UserCheck size={15} className="mr-3 text-slate-400" />
+            <UserCheck size={15} className="mr-3 text-slate-400 shrink-0" />
             Equipe
           </button>
 
           {/* HORÁRIOS */}
           <button 
-            onClick={() => setActiveTab('horarios')}
+            onClick={() => { setActiveTab('horarios'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'horarios' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Clock size={15} className="mr-3 text-slate-400" />
+            <Clock size={15} className="mr-3 text-slate-400 shrink-0" />
             Funcionamento
           </button>
 
           {/* FINANCEIRO */}
           <button 
-            onClick={() => setActiveTab('financeiro')}
+            onClick={() => { setActiveTab('financeiro'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'financeiro' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <TrendingUp size={15} className="mr-3 text-slate-400" />
+            <TrendingUp size={15} className="mr-3 text-slate-400 shrink-0" />
             Financeiro
           </button>
 
           {/* ESTOQUE */}
           <button 
-            onClick={() => setActiveTab('estoque')}
+            onClick={() => { setActiveTab('estoque'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'estoque' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Package size={15} className="mr-3 text-slate-400" />
+            <Package size={15} className="mr-3 text-slate-400 shrink-0" />
             Estoque
           </button>
 
           {/* MENSAGENS */}
           <button 
-            onClick={() => setActiveTab('mensagens')}
+            onClick={() => { setActiveTab('mensagens'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'mensagens' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <MessageSquare size={15} className="mr-3 text-slate-400" />
+            <MessageSquare size={15} className="mr-3 text-slate-400 shrink-0" />
             Mensagens WhatsApp
           </button>
 
           {/* PÁGINA PÚBLICA */}
           <button 
-            onClick={() => setActiveTab('pagina_publica')}
+            onClick={() => { setActiveTab('pagina_publica'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'pagina_publica' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Eye size={15} className="mr-3 text-slate-400" />
+            <Eye size={15} className="mr-3 text-slate-400 shrink-0" />
             Design / Link Público
           </button>
 
           {/* PLANOS */}
           <button 
-            onClick={() => setActiveTab('planos')}
+            onClick={() => { setActiveTab('planos'); onItemClick?.(); }}
             className={`w-full flex items-center px-4 py-3 text-xs font-semibold rounded-2xl transition-all cursor-pointer ${
               activeTab === 'planos' 
-                ? 'bg-slate-100/50 text-slate-800' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                ? 'bg-slate-100/60 text-slate-900 border-l-4 border-indigo-500 pl-3.5' 
+                : 'text-slate-500 hover:text-slate-850 hover:bg-slate-50/50'
             }`}
           >
-            <Award size={15} className="mr-3 text-slate-400" />
+            <Award size={15} className="mr-3 text-slate-400 shrink-0" />
             Planos
           </button>
 
@@ -1499,10 +1483,10 @@ export default function App() {
             <button
               onClick={handleCopyBookingLink}
               style={{ color: customPrimary }}
-              className="text-[10px] font-bold tracking-wider hover:opacity-85 flex items-center gap-1.5 cursor-pointer"
+              className="text-[10px] font-bold tracking-wider hover:opacity-85 flex items-center gap-1.5 cursor-pointer font-mono"
             >
               {copiedLink ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
-              {copiedLink ? 'Link Copiado!' : 'Copiar Link Agenda'}
+              {copiedLink ? 'LINK COPIADO!' : 'COPIAR LINK AGENDA'}
             </button>
           </div>
         </nav>
@@ -1512,14 +1496,14 @@ export default function App() {
           <div className="flex items-center gap-2.5 justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <span 
-                className="w-9 h-9 rounded-full text-white text-[11px] font-black tracking-tight flex items-center justify-center uppercase shrink-0"
+                className="w-9 h-9 rounded-full text-white text-[11px] font-black tracking-tight flex items-center justify-center uppercase shrink-0 shadow-sm"
                 style={{ backgroundColor: customPrimary }}
               >
                 {(activeTenantObj?.name || 'C')[0]}
               </span>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-700 truncate capitalize">{activeTenantObj?.name || 'Clínica'}</p>
-                <span className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-150 rounded-full text-[8px] font-black uppercase tracking-widest mt-0.5 leading-none shadow-xs">
+                <span className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-155 rounded-full text-[8px] font-black uppercase tracking-widest mt-0.5 leading-none shadow-xs">
                   Plano: {activeTenantObj?.plan || 'Grátis'}
                 </span>
               </div>
@@ -1535,6 +1519,7 @@ export default function App() {
                     setSession(null);
                     setActiveTab('dashboard');
                     setShowLogoutConfirm(false);
+                    onItemClick?.();
                   }}
                   className="px-1.5 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded text-[8px] font-bold cursor-pointer transition-colors"
                 >
@@ -1560,40 +1545,93 @@ export default function App() {
             )}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-screen w-full overflow-hidden text-sm">
+      {session?.impersonated && (
+        <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white px-8 py-2.5 text-[10px] font-black uppercase tracking-wider flex items-center justify-between shadow-md relative z-50 animate-pulse font-sans">
+          <span>⚠️ Modo Simulação: Você está visualizando e editando a clínica "{activeTenantObj?.name}" como Administrador.</span>
+          <button
+            onClick={() => {
+              setSession({ role: 'admin' });
+              setActiveTab('dashboard');
+            }}
+            className="px-3 py-1 bg-white hover:bg-slate-100 text-orange-700 font-extrabold rounded-lg uppercase tracking-widest text-[8px] transition-all cursor-pointer border border-transparent"
+          >
+            Voltar para Superadmin
+          </button>
+        </div>
+      )}
+      
+      <div className="flex h-full w-full overflow-hidden font-sans" style={{ backgroundColor: customBackground }}>
+      {/* MOBILE COLLAPSIBLE SIDEBAR DRAWER PANEL */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-350"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <aside className="relative flex w-full max-w-[260px] flex-1 flex-col bg-white h-full animate-slide-in shadow-2xl">
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute right-3.5 top-3.5 p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-50 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex-1 h-full">
+              {renderSidebarContents(() => setIsMobileMenuOpen(false))}
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* LEFT STATIC NAVIGATION SIDEBAR */}
+      <aside className="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col justify-between shrink-0 h-full">
+        {renderSidebarContents()}
       </aside>
-
-      {/* CORE DISPLAY CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* TOP SEARCH HEADER BAR */}
-        <header className="h-16 px-8 border-b border-slate-50 bg-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium font-sans">
-            <span className="text-slate-800 font-bold uppercase tracking-wider text-[11px] font-sans">
-              {(() => {
-                switch (activeTab) {
-                  case 'dashboard': return 'Painel Geral';
-                  case 'agendamentos': return 'Agenda de Horários';
-                  case 'clientes': return 'Meus Clientes';
-                  case 'servicos': return 'Serviços e Tratamentos';
-                  case 'equipe': return 'Profissionais e Colaboradores';
-                  case 'horarios': return 'Horário de Funcionamento';
-                  case 'mensagens': return 'Modelos de Mensagens';
-                  case 'publico': return 'Design e Link Público';
-                  case 'planos': return 'Nossos Planos';
-                  case 'estoque': return 'Estoque e Controle';
-                  case 'financeiro': return 'Financeiro e Livro Caixa';
-                  default: return activeTab.replace('_', ' ');
-                }
-              })()}
-            </span>
-          </div>
-
-          <div className="text-right flex items-center gap-4">
-            <p className="text-[11px] font-mono text-slate-400">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-          </div>
-        </header>
-
-        {/* VIEW BODY RENDERING AREA */}
-        <div className="flex-1 p-8 overflow-y-auto no-scrollbar" style={{ backgroundColor: customBackground }}>
+ 
+       {/* CORE DISPLAY CONTENT */}
+       <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+         {/* TOP SEARCH HEADER BAR */}
+         <header className="h-16 px-4 lg:px-8 border-b border-slate-50 bg-white flex items-center justify-between shrink-0">
+           <div className="flex items-center gap-3 text-xs text-slate-600 font-medium font-sans">
+             <button
+               onClick={() => setIsMobileMenuOpen(true)}
+               className="p-2 -ml-2 text-slate-500 hover:text-slate-800 lg:hidden rounded-xl hover:bg-slate-50 cursor-pointer flex items-center justify-center"
+               title="Ver Menu"
+             >
+               <Menu size={18} className="text-slate-600" />
+             </button>
+             <span className="text-slate-800 font-bold uppercase tracking-wider text-[11px] font-sans">
+               {(() => {
+                 switch (activeTab) {
+                   case 'dashboard': return 'Painel Geral';
+                   case 'agendamentos': return 'Agenda de Horários';
+                   case 'clientes': return 'Meus Clientes';
+                   case 'servicos': return 'Serviços e Tratamentos';
+                   case 'equipe': return 'Profissionais e Colaboradores';
+                   case 'horarios': return 'Horário de Funcionamento';
+                   case 'mensagens': return 'Modelos de Mensagens';
+                   case 'publico': return 'Design e Link Público';
+                   case 'planos': return 'Nossos Planos';
+                   case 'estoque': return 'Estoque e Controle';
+                   case 'financeiro': return 'Financeiro e Livro Caixa';
+                   default: return activeTab.replace('_', ' ');
+                 }
+               })()}
+             </span>
+           </div>
+ 
+           <div className="text-right flex items-center gap-4">
+             <p className="text-[11px] font-mono text-slate-400 hidden sm:block">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+           </div>
+         </header>
+ 
+         {/* VIEW BODY RENDERING AREA */}
+         <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar" style={{ backgroundColor: customBackground }}>
           
           {activeTab === 'dashboard' && (
             <DashboardView 

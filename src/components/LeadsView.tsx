@@ -232,9 +232,11 @@ export default function LeadsView({
                             <span className="text-slate-500 truncate capitalize max-w-[120px]" title={serv ? serv.name : 'Dúvidas / Consulta Geral'}>
                               {serv ? serv.name : 'Dúvidas / Consulta'}
                             </span>
-                            <span className="font-mono text-[9px] font-bold text-slate-550 bg-slate-100 px-1 rounded">
-                              {serv ? formatCurrency(serv.price) : 'Grátis'}
-                            </span>
+                            {serv && (
+                              <span className="font-mono text-[9px] font-bold text-indigo-650 bg-indigo-50/50 px-1 rounded">
+                                {formatCurrency(serv.price)}
+                              </span>
+                            )}
                           </div>
                         )}
 
