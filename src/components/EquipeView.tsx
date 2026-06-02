@@ -103,65 +103,73 @@ export default function EquipeView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
-              {professionals.filter(p => !p.deleted).map(prof => (
-                <tr key={prof.id} className="hover:bg-slate-50/20">
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold flex items-center justify-center uppercase">
-                        {prof.name.charAt(0)}
-                      </span>
-                      <span className="font-bold text-slate-700 capitalize">{prof.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-slate-500 capitalize">{prof.role}</td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                      prof.status === 'Ativo' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      {prof.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    {prof.loginCreated ? (
-                      <button
-                        onClick={() => handleOpenLoginModal(prof)}
-                        className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1.5 bg-emerald-50 max-w-fit px-2 py-1 rounded-md hover:bg-emerald-100 transition-colors cursor-pointer"
-                        title="Clique para editar credenciais"
-                      >
-                        <Shield size={11} /> Habilitado ({prof.loginEmail || 'Sem email'})
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleOpenLoginModal(prof)}
-                        className="px-2.5 py-1 text-[10px] font-bold text-slate-600 border border-slate-100 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
-                      >
-                        Habilitar Login / Permissões
-                      </button>
-                    )}
-                  </td>
-                  <td className="py-4 px-6 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        onClick={() => onEditProfessional(prof)}
-                        className="px-2.5 py-1.5 border border-slate-100 text-[10px] font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => {
-                          const confirmed = window.confirm(`Deseja realmente excluir o profissional "${prof.name}"?`);
-                          if (confirmed) {
-                            onDeleteProfessional(prof.id);
-                          }
-                        }}
-                        className="px-2.5 py-1.5 border border-red-100 text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
-                      >
-                        🗑️ Excluir
-                      </button>
-                    </div>
+              {professionals.filter(p => !p.deleted).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                    Sem profissional cadastrado
                   </td>
                 </tr>
-              ))}
+              ) : (
+                professionals.filter(p => !p.deleted).map(prof => (
+                  <tr key={prof.id} className="hover:bg-slate-50/20">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold flex items-center justify-center uppercase">
+                          {prof.name.charAt(0)}
+                        </span>
+                        <span className="font-bold text-slate-700 capitalize">{prof.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-slate-500 capitalize">{prof.role}</td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+                        prof.status === 'Ativo' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {prof.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      {prof.loginCreated ? (
+                        <button
+                          onClick={() => handleOpenLoginModal(prof)}
+                          className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1.5 bg-emerald-50 max-w-fit px-2 py-1 rounded-md hover:bg-emerald-100 transition-colors cursor-pointer"
+                          title="Clique para editar credenciais"
+                        >
+                          <Shield size={11} /> Habilitado ({prof.loginEmail || 'Sem email'})
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenLoginModal(prof)}
+                          className="px-2.5 py-1 text-[10px] font-bold text-slate-600 border border-slate-100 bg-slate-50 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                        >
+                          Habilitar Login / Permissões
+                        </button>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => onEditProfessional(prof)}
+                          className="px-2.5 py-1.5 border border-slate-100 text-[10px] font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const confirmed = window.confirm(`Deseja realmente excluir o profissional "${prof.name}"?`);
+                            if (confirmed) {
+                              onDeleteProfessional(prof.id);
+                            }
+                          }}
+                          className="px-2.5 py-1.5 border border-red-100 text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
+                        >
+                          🗑️ Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

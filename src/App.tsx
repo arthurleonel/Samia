@@ -820,7 +820,7 @@ export default function App() {
     setNewBooking({
       clientId: targetClientId || '',
       serviceId: l.interestServiceId || services[0]?.id || '',
-      professionalId: professionals[0]?.id || '',
+      professionalId: professionals.find(p => !p.deleted)?.id || '',
       date: new Date().toISOString().split('T')[0],
       time: '14:00',
       status: 'Pendente'
@@ -832,7 +832,7 @@ export default function App() {
     setNewBooking({
       clientId: '',
       serviceId: services.length > 0 ? services[0].id : '',
-      professionalId: professionals[0]?.id || 'prof-1',
+      professionalId: professionals.find(p => !p.deleted)?.id || '',
       date: new Date().toLocaleDateString('en-CA'),
       time: '12:00',
       status: 'Pendente' as Appointment['status']
@@ -1115,9 +1115,10 @@ export default function App() {
       logActivity(`Colaborador "${newProf.name}" modificado.`);
       setEditingProfessional(null);
     } else {
-      if (professionals.length >= currentFeatures.maxProfessionals) {
+      const activeStaffCount = professionals.filter(p => !p.deleted).length;
+      if (activeStaffCount >= currentFeatures.maxProfessionals) {
         alert(`Limite de Colaboradores Atingido! Seu plano atual (${activePlanName}) permite até ${currentFeatures.maxProfessionals} colaboradores ativos. Por favor, faça um upgrade para adicionar mais profissionais.`);
-        handleShowUpgradeModal(`Cadastro de Colaborador (${professionals.length}/${currentFeatures.maxProfessionals} limite do plano)`);
+        handleShowUpgradeModal(`Cadastro de Colaborador (${activeStaffCount}/${currentFeatures.maxProfessionals} limite do plano)`);
         return;
       }
       const added: Professional = {
@@ -1664,7 +1665,7 @@ export default function App() {
                 setNewBooking({
                   clientId: '',
                   serviceId: services.length > 0 ? services[0].id : '',
-                  professionalId: professionals[0]?.id || 'prof-1',
+                  professionalId: professionals.find(p => !p.deleted)?.id || '',
                   date: dateString,
                   time: '12:00',
                   status: 'Pendente' as Appointment['status']
@@ -1698,7 +1699,7 @@ export default function App() {
                   setNewBooking({
                     clientId: clientId,
                     serviceId: services.length > 0 ? services[0].id : '',
-                    professionalId: professionals[0]?.id || 'prof-1',
+                    professionalId: professionals.find(p => !p.deleted)?.id || '',
                     date: new Date().toLocaleDateString('en-CA'),
                     time: '12:00',
                     status: 'Pendente' as Appointment['status']
@@ -1774,8 +1775,9 @@ export default function App() {
               theme={activePreset}
               customPrimary={customPrimary}
               onOpenNewProfessional={() => {
-                if (professionals.length >= currentFeatures.maxProfessionals) {
-                  handleShowUpgradeModal(`Cadastro de Colaborador (${professionals.length}/${currentFeatures.maxProfessionals} limite atingido)`);
+                const activeStaffCount = professionals.filter(p => !p.deleted).length;
+                if (activeStaffCount >= currentFeatures.maxProfessionals) {
+                  handleShowUpgradeModal(`Cadastro de Colaborador (${activeStaffCount}/${currentFeatures.maxProfessionals} limite atingido)`);
                 } else {
                   setEditingProfessional(null);
                   setNewProf({ name: '', role: 'Esteticista', status: 'Ativo' });
@@ -2686,9 +2688,13 @@ export default function App() {
                   required
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
                 >
-                  {professionals.filter(p => !p.deleted || p.id === newBooking.professionalId).map(p => (
-                    <option key={p.id} value={p.id}>{p.name} · {p.role}</option>
-                  ))}
+                  {professionals.filter(p => !p.deleted || p.id === newBooking.professionalId).length === 0 ? (
+                    <option value="">Sem profissional cadastrado</option>
+                  ) : (
+                    professionals.filter(p => !p.deleted || p.id === newBooking.professionalId).map(p => (
+                      <option key={p.id} value={p.id}>{p.name} · {p.role}</option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -3048,9 +3054,13 @@ export default function App() {
                   required
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs"
                 >
-                  {professionals.filter(p => !p.deleted || p.id === newAbsence.professionalId).map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                  {professionals.filter(p => !p.deleted || p.id === newAbsence.professionalId).length === 0 ? (
+                    <option value="">Sem profissional cadastrado</option>
+                  ) : (
+                    professionals.filter(p => !p.deleted || p.id === newAbsence.professionalId).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))
+                  )}
                 </select>
               </div>
 

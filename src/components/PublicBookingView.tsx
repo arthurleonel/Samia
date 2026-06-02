@@ -31,7 +31,7 @@ export default function PublicBookingView({
   onConfirmBooking,
 }: PublicBookingViewProps) {
   const activeServices = services.filter(s => s.status === 'Ativo' && s.visibleInBooking && !s.deleted);
-  const activeProfessionals = professionals.filter(p => p.status === 'Ativo');
+  const activeProfessionals = professionals.filter(p => p.status === 'Ativo' && !p.deleted);
 
   // Step 0 is the welcome selector asking: "Já é cliente ou novo?"
   const [step, setStep] = useState(0); 
@@ -489,6 +489,12 @@ export default function PublicBookingView({
 
               <div className="space-y-4">
                 {/* Select Professional */}
+                {activeProfessionals.length === 0 && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-center text-xs text-red-500 font-medium">
+                    Sem profissional cadastrado para agendamentos no momento.
+                  </div>
+                )}
+
                 {activeProfessionals.length > 1 && (
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Escolher Profissional</label>
