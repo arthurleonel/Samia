@@ -341,6 +341,66 @@ app.post('/api/saas/register-tenant', async (req, res) => {
   res.json({ success: true, newTenant: newT, tenants: currentTenants });
 });
 
+// 4c. Register a plan request for a specific tenant safely
+app.post('/api/saas/tenant/:tenantId/plan-request', async (req, res) => {
+  const { tenantId } = req.params;
+  const { planName, clearRequest } = req.body;
+
+  let currentTenants: any[] = [];
+  try {
+    if (isDbConnected && pool) {
+      const tenantsRes = await pool.query('SELECT tenants_json FROM saas_tenants WHERE id = $1', ['global']);
+      if (tenantsRes.rows.length > 0) {
+        currentTenants = JSON.parse(tenantsRes.rows[0].tenants_json);
+      } else {
+        currentTenants = localCache.tenants || [];
+      }
+    } else {
+      currentTenants = localCache.tenants || [];
+    }
+  } catch (err: any) {
+    currentTenants = localCache.tenants || [];
+  }
+
+  if (!Array.isArray(currentTenants)) {
+    return res.status(500).json({ error: 'Erro de carga de dados central.' });
+  }
+
+  let matched = false;
+  currentTenants = currentTenants.map((t: any) => {
+    if (t.id === tenantId) {
+      matched = true;
+      if (clearRequest) {
+        return { ...t, plan: planName || t.plan, pendingPlanRequest: undefined };
+      } else {
+        return { ...t, pendingPlanRequest: planName };
+      }
+    }
+    return t;
+  });
+
+  if (!matched) {
+    return res.status(404).json({ error: 'Clínica não encontrada no cadastro global.' });
+  }
+
+  localCache.tenants = currentTenants;
+  saveCacheToFallbackFile();
+
+  try {
+    if (isDbConnected && pool) {
+      await pool.query(
+        `INSERT INTO saas_tenants (id, tenants_json) VALUES ($1, $2)
+         ON CONFLICT (id) DO UPDATE SET tenants_json = EXCLUDED.tenants_json`,
+        ['global', JSON.stringify(currentTenants)]
+      );
+    }
+  } catch (err: any) {
+    console.error('[DB Plan Request Sync Error]:', err.message);
+  }
+
+  res.json({ success: true, tenants: currentTenants });
+});
+
 // 5. Load complete clinic data (all storage tables)
 app.get('/api/tenant/:tenantId/load', async (req, res) => {
   const { tenantId } = req.params;
@@ -376,6 +436,61 @@ app.post('/api/tenant/:tenantId/save', async (req, res) => {
   }
   localCache.tenant_data[tenantId][keyType] = dataList;
   saveCacheToFallbackFile();
+
+  // If editing settings, sync clinic details (name, sidebarTitle, sidebarSubtitle) back to the global tenant list
+  if (keyType === 'settings' && dataList) {
+    const { name, sidebarTitle, sidebarSubtitle } = dataList;
+    if (name || sidebarTitle || sidebarSubtitle) {
+      let currentTenants: any[] = [];
+      try {
+        if (isDbConnected && pool) {
+          const tenantsRes = await pool.query('SELECT tenants_json FROM saas_tenants WHERE id = $1', ['global']);
+          if (tenantsRes.rows.length > 0) {
+            currentTenants = JSON.parse(tenantsRes.rows[0].tenants_json);
+          } else {
+            currentTenants = localCache.tenants || [];
+          }
+        } else {
+          currentTenants = localCache.tenants || [];
+        }
+      } catch (err: any) {
+        currentTenants = localCache.tenants || [];
+      }
+
+      if (Array.isArray(currentTenants)) {
+        let tenantChanged = false;
+        currentTenants = currentTenants.map((t: any) => {
+          if (t.id === tenantId) {
+            tenantChanged = true;
+            return {
+              ...t,
+              name: name || t.name,
+              sidebarTitle: sidebarTitle || t.sidebarTitle,
+              sidebarSubtitle: sidebarSubtitle || t.sidebarSubtitle
+            };
+          }
+          return t;
+        });
+
+        if (tenantChanged) {
+          localCache.tenants = currentTenants;
+          saveCacheToFallbackFile();
+
+          if (isDbConnected && pool) {
+            try {
+              await pool.query(
+                `INSERT INTO saas_tenants (id, tenants_json) VALUES ($1, $2)
+                 ON CONFLICT (id) DO UPDATE SET tenants_json = EXCLUDED.tenants_json`,
+                ['global', JSON.stringify(currentTenants)]
+              );
+            } catch (dbErr: any) {
+              console.error('[DB Settings Metadata Sync Error]:', dbErr.message);
+            }
+          }
+        }
+      }
+    }
+  }
 
   try {
     if (isDbConnected && pool) {

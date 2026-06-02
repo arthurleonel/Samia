@@ -508,10 +508,10 @@ export default function App() {
     }
   }, [session]);
 
-  // Tenants list storage sync
+  // We no longer automatically sync the global tenants list to the server from standard users.
+  // This is a server resource and is only updated explicitly on mutations under Superadmin or safe register/plan actions.
   useEffect(() => {
     localStorage.setItem('lumini_tenants', JSON.stringify(tenants));
-    syncSaasTenantsList(tenants);
   }, [tenants]);
 
   // Real-time synchronization of lists between tabs and frames to automatically mirror bookings
@@ -566,14 +566,51 @@ export default function App() {
       .then(res => {
         if (res.pricing) setPricing(res.pricing);
         if (res.planFeatures) setPlanFeatures(res.planFeatures);
-        if (res.tenants && res.tenants.length > 0) {
-          setTenants(res.tenants);
-          localStorage.setItem('lumini_tenants', JSON.stringify(res.tenants));
+        
+        let loadedTenants = res.tenants;
+        if (loadedTenants && Array.isArray(loadedTenants)) {
+          setTenants(loadedTenants);
+          localStorage.setItem('lumini_tenants', JSON.stringify(loadedTenants));
+
+          // If current logged-in clinic is no longer in retrieved tenant list, force logout!
+          if (session && session.role === 'clinic' && !session.impersonated) {
+            const stillExists = loadedTenants.some((t: any) => t.id === session.tenantId);
+            if (!stillExists) {
+              setSession(null);
+              setActiveTab('dashboard');
+              alert("Sua clínica não foi localizada ou foi excluída pelo administrador global.");
+            }
+          }
         }
       })
       .catch((err) => {
         console.warn('[FullStack Init] Could not fetch SaaS init payload, using local backup config:', err.message);
       });
+  };
+
+  const requestPlanChange = async (planName: string, isDowngradeToFree: boolean = false) => {
+    try {
+      const res = await fetch(`/api/saas/tenant/${activeTenantId}/plan-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planName: planName,
+          clearRequest: isDowngradeToFree
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTenants(data.tenants);
+        localStorage.setItem('lumini_tenants', JSON.stringify(data.tenants));
+      } else {
+        // Fallback local update
+        setTenants(prev => prev.map(t => t.id === activeTenantId ? (isDowngradeToFree ? { ...t, plan: 'Grátis', pendingPlanRequest: undefined } : { ...t, pendingPlanRequest: planName }) : t));
+      }
+    } catch (e) {
+      console.error('Error changing plan request:', e);
+      // Fallback local update
+      setTenants(prev => prev.map(t => t.id === activeTenantId ? (isDowngradeToFree ? { ...t, plan: 'Grátis', pendingPlanRequest: undefined } : { ...t, pendingPlanRequest: planName }) : t));
+    }
   };
 
   useEffect(() => {
@@ -1247,16 +1284,36 @@ export default function App() {
           syncSaasPricing(newPricing);
         }}
         onUpdateTenantStatus={(id, status) => {
-          setTenants(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+          setTenants(prev => {
+            const updated = prev.map(t => t.id === id ? { ...t, status } : t);
+            localStorage.setItem('lumini_tenants', JSON.stringify(updated));
+            syncSaasTenantsList(updated);
+            return updated;
+          });
         }}
         onUpdateTenantPlan={(id, plan) => {
-          setTenants(prev => prev.map(t => t.id === id ? { ...t, plan, pendingPlanRequest: undefined } : t));
+          setTenants(prev => {
+            const updated = prev.map(t => t.id === id ? { ...t, plan, pendingPlanRequest: undefined } : t);
+            localStorage.setItem('lumini_tenants', JSON.stringify(updated));
+            syncSaasTenantsList(updated);
+            return updated;
+          });
         }}
         onRejectTenantPlanRequest={(id) => {
-          setTenants(prev => prev.map(t => t.id === id ? { ...t, pendingPlanRequest: undefined } : t));
+          setTenants(prev => {
+            const updated = prev.map(t => t.id === id ? { ...t, pendingPlanRequest: undefined } : t);
+            localStorage.setItem('lumini_tenants', JSON.stringify(updated));
+            syncSaasTenantsList(updated);
+            return updated;
+          });
         }}
         onDeleteTenant={(id) => {
-          setTenants(prev => prev.filter(t => t.id !== id));
+          setTenants(prev => {
+            const updated = prev.filter(t => t.id !== id);
+            localStorage.setItem('lumini_tenants', JSON.stringify(updated));
+            syncSaasTenantsList(updated);
+            return updated;
+          });
         }}
         onImpersonate={(id) => {
           setSession({ role: 'clinic', tenantId: id, impersonated: true });
@@ -1878,11 +1935,11 @@ export default function App() {
               planFeatures={planFeatures}
               onSelectPlan={(planName) => {
                 if (planName === 'Grátis') {
-                  setTenants(prev => prev.map(t => t.id === activeTenantId ? { ...t, plan: 'Grátis', pendingPlanRequest: undefined } : t));
+                  requestPlanChange('Grátis', true);
                   alert("Seu plano foi alterado de volta para o plano Grátis.");
                   return;
                 }
-                setTenants(prev => prev.map(t => t.id === activeTenantId ? { ...t, pendingPlanRequest: planName } : t));
+                requestPlanChange(planName, false);
                 alert(`Solicitação Recebida! Sua solicitação para migração para o plano "${planName}" foi registrada com sucesso e está em análise. Um administrador ativará seu acesso em breve.`);
               }}
             />
@@ -3190,7 +3247,7 @@ export default function App() {
                 {/* Professional plan box */}
                 <div 
                   onClick={() => {
-                    setTenants(prev => prev.map(t => t.id === activeTenantId ? { ...t, pendingPlanRequest: 'Profissional' } : t));
+                    requestPlanChange('Profissional', false);
                     setUpgradeModalOpen(false);
                     alert("Sua solicitação para migração para o Plano Profissional foi enviada com sucesso! A administração ativará sua conta em instantes.");
                   }}
@@ -3211,7 +3268,7 @@ export default function App() {
                 {/* Clinic Plan Box */}
                 <div 
                   onClick={() => {
-                    setTenants(prev => prev.map(t => t.id === activeTenantId ? { ...t, pendingPlanRequest: 'Clínica' } : t));
+                    requestPlanChange('Clínica', false);
                     setUpgradeModalOpen(false);
                     alert("Excelência solicitada! Sua solicitação para migração para o Plano Clínica foi enviada com sucesso! A administração ativará sua conta em instantes.");
                   }}
