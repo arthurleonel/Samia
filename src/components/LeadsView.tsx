@@ -227,10 +227,14 @@ export default function LeadsView({
                         </div>
 
                         {/* Interested Service Badge */}
-                        {serv && (
+                        {(serv || l.interestServiceId === 'duvidas_consulta') && (
                           <div className="flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 text-[10px]">
-                            <span className="text-slate-500 truncate capitalize max-w-[90px]" title={serv.name}>{serv.name}</span>
-                            <span className="font-mono text-[9px] font-bold text-indigo-650 bg-indigo-50/50 px-1 rounded">{formatCurrency(serv.price)}</span>
+                            <span className="text-slate-500 truncate capitalize max-w-[120px]" title={serv ? serv.name : 'Dúvidas / Consulta Geral'}>
+                              {serv ? serv.name : 'Dúvidas / Consulta'}
+                            </span>
+                            <span className="font-mono text-[9px] font-bold text-slate-550 bg-slate-100 px-1 rounded">
+                              {serv ? formatCurrency(serv.price) : 'Grátis'}
+                            </span>
                           </div>
                         )}
 
@@ -366,12 +370,17 @@ export default function LeadsView({
                     value={interestServiceId}
                     onChange={(e) => {
                       setInterestServiceId(e.target.value);
-                      const srv = services.find(s => s.id === e.target.value);
-                      if (srv) setValue(srv.price);
+                      if (e.target.value === 'duvidas_consulta') {
+                        setValue(0);
+                      } else {
+                        const srv = services.find(s => s.id === e.target.value);
+                        if (srv) setValue(srv.price);
+                      }
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl focus:outline-none"
                   >
                     <option value="">Selecione um serviço...</option>
+                    <option value="duvidas_consulta">Dúvidas / Consulta Geral</option>
                     {services.filter(s => !s.deleted || s.id === interestServiceId).map(s => (
                       <option key={s.id} value={s.id}>{s.name} - {formatCurrency(s.price)}</option>
                     ))}

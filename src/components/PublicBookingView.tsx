@@ -72,6 +72,29 @@ export default function PublicBookingView({
   const currentDayHours = operatingHours.find(h => h.day === selectedDayName);
   const isClosed = !currentDayHours || !currentDayHours.enabled;
 
+  // Helper to check professional absences / schedule blocks
+  const getAbsenceBlock = (timeStr: string) => {
+    if (!selectedProfessional || !selectedProfessional.absences) return null;
+    
+    return selectedProfessional.absences.find(abs => {
+      const dTarget = selectedDate; // YYYY-MM-DD
+      const isWithinDate = dTarget >= abs.startDate && dTarget <= abs.endDate;
+      if (!isWithinDate) return false;
+      
+      if (abs.startDate === abs.endDate) {
+        return timeStr >= abs.startTime && timeStr < abs.endTime;
+      } else {
+        if (dTarget === abs.startDate) {
+          return timeStr >= abs.startTime;
+        } else if (dTarget === abs.endDate) {
+          return timeStr < abs.endTime;
+        } else {
+          return true;
+        }
+      }
+    });
+  };
+
   // Generate morning and afternoon time slots based on operating hours
   const generateTimeSlots = () => {
     if (isClosed || !currentDayHours) return [];
@@ -152,7 +175,7 @@ export default function PublicBookingView({
     });
 
     setConfirmedDetails({
-      serviceName: selectedService?.name,
+      serviceName: selectedServiceId === 'duvidas_consulta' ? 'Dúvidas / Consulta Geral' : selectedService?.name,
       professionalName: selectedProfessional?.name,
       date: isNewClient ? null : selectedDate,
       time: isNewClient ? null : selectedTime,
@@ -505,14 +528,22 @@ export default function PublicBookingView({
                     {isClosed ? (
                       <span className="text-rose-500 font-bold block">Clínica fechada hoje</span>
                     ) : (
-                      <span className="text-slate-450 block">Funcionamento: {currentDayHours?.start} às {currentDayHours?.end}</span>
+                      <div className="space-y-1">
+                        <span className="text-slate-500 block">Funcionamento: <strong className="text-slate-800 font-extrabold">{currentDayHours?.start} - {currentDayHours?.end}</strong></span>
+                        {currentDayHours?.lunchEnabled && currentDayHours?.lunchStart && currentDayHours?.lunchEnd && (
+                          <div className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold mt-0.5 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100/50">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            <span>Almoço: {currentDayHours.lunchStart} às {currentDayHours.lunchEnd}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Available Hours list */}
                 {!isClosed && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Horários Disponíveis Hoje</label>
                     {timeSlots.length === 0 ? (
                       <p className="text-[11px] text-slate-400 italic">Nenhum horário disponível para a data selecionada.</p>
@@ -520,16 +551,19 @@ export default function PublicBookingView({
                       <div className="grid grid-cols-4 gap-2 max-h-[150px] overflow-y-auto pr-1 no-scrollbar text-xs">
                         {timeSlots.map((time) => {
                           const isSelectedSlot = selectedTime === time;
-                          const isBooked = appointments && appointments.some(apt => 
+                          const absBlock = getAbsenceBlock(time);
+                          const isAbsenceBlocked = !!absBlock;
+                          const isBooked = (appointments && appointments.some(apt => 
                             apt.date === selectedDate && 
                             apt.professionalId === selectedProfessionalId &&
                             apt.time === time
-                          );
+                          )) || isAbsenceBlocked;
                           return (
                             <button
                               key={time}
                               type="button"
                               disabled={isBooked}
+                              title={absBlock ? `Indisponível: ${absBlock.reason}` : undefined}
                               onClick={() => setSelectedTime(time)}
                               style={{ 
                                 borderColor: isSelectedSlot && !isBooked ? primaryColor : '', 
@@ -547,6 +581,27 @@ export default function PublicBookingView({
                             </button>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {/* Block reason notice summary */}
+                    {selectedProfessional && selectedProfessional.absences && selectedProfessional.absences.some(abs => selectedDate >= abs.startDate && selectedDate <= abs.endDate) && (
+                      <div className="bg-[#FAF7F6] border border-amber-100 p-3.5 rounded-2xl space-y-1.5 text-[10px] shadow-xs">
+                        <span className="font-bold text-amber-800 flex items-center gap-1.5">
+                          ⚠️ Observação de indisponibilidade ({selectedProfessional.name}):
+                        </span>
+                        <div className="space-y-1 pl-1">
+                          {selectedProfessional.absences
+                            .filter(abs => selectedDate >= abs.startDate && selectedDate <= abs.endDate)
+                            .map((abs) => (
+                              <div key={abs.id} className="text-slate-600 flex items-start gap-1">
+                                <span className="font-bold text-amber-700 font-mono shrink-0">
+                                  {abs.startTime} - {abs.endTime}:
+                                </span>
+                                <span className="italic">"{abs.reason}"</span>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -750,6 +805,7 @@ export default function PublicBookingView({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
                   >
                     <option value="">Selecione o procedimento de interesse...</option>
+                    <option value="duvidas_consulta">Dúvidas / Consulta Geral</option>
                     {activeServices.map(s => (
                       <option key={s.id} value={s.id}>{s.name} ({formatCurrency(s.price)})</option>
                     ))}

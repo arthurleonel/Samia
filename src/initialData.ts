@@ -2,43 +2,9 @@ import { Client, Service, Professional, Appointment, OperatingHour, ThemePreset,
 
 export const INITIAL_CLIENTS: Client[] = [];
 
-export const INITIAL_SERVICES: Service[] = [
-  {
-    id: 'srv-1',
-    name: 'limpeza de pele',
-    price: 30.00,
-    duration: 60,
-    visibleInBooking: true,
-    status: 'Ativo'
-  },
-  {
-    id: 'srv-2',
-    name: 'harmonização facial',
-    price: 1200.00,
-    duration: 90,
-    visibleInBooking: true,
-    status: 'Ativo'
-  },
-  {
-    id: 'srv-3',
-    name: 'toxina botulínica',
-    price: 800.00,
-    duration: 45,
-    visibleInBooking: true,
-    status: 'Ativo'
-  }
-];
+export const INITIAL_SERVICES: Service[] = [];
 
-export const INITIAL_PROFESSIONALS: Professional[] = [
-  {
-    id: 'prof-1',
-    name: 'Samia',
-    role: 'Esteticista',
-    status: 'Ativo',
-    loginCreated: false,
-    absences: []
-  }
-];
+export const INITIAL_PROFESSIONALS: Professional[] = [];
 
 export const INITIAL_APPOINTMENTS: Appointment[] = [];
 
