@@ -372,7 +372,7 @@ export default function LeadsView({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl focus:outline-none"
                   >
                     <option value="">Selecione um serviço...</option>
-                    {services.map(s => (
+                    {services.filter(s => !s.deleted || s.id === interestServiceId).map(s => (
                       <option key={s.id} value={s.id}>{s.name} - {formatCurrency(s.price)}</option>
                     ))}
                   </select>

@@ -418,7 +418,7 @@ export default function AgendamentosView({
                         }}
                         className="w-full px-3 py-2 border border-slate-100 bg-slate-50 rounded-xl focus:bg-white outline-none"
                       >
-                        {services.map(s => (
+                        {services.filter(s => !s.deleted || s.id === editServiceId).map(s => (
                           <option key={s.id} value={s.id}>{s.name} (R$ {s.price})</option>
                         ))}
                       </select>
@@ -601,33 +601,39 @@ export default function AgendamentosView({
                   </>
                 ) : (
                   <>
-                    <button
-                      onClick={() => {
-                        onUpdateAppointmentStatus(selectedApt.id, 'Confirmado');
-                        setSelectedApt(prev => prev ? { ...prev, status: 'Confirmado' } : null);
-                      }}
-                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold cursor-pointer"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      onClick={() => {
-                        onUpdateAppointmentStatus(selectedApt.id, 'Finalizado');
-                        setSelectedApt(prev => prev ? { ...prev, status: 'Finalizado' } : null);
-                      }}
-                      className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold cursor-pointer"
-                    >
-                      Finalizar
-                    </button>
-                    <button
-                      onClick={() => {
-                        onUpdateAppointmentStatus(selectedApt.id, 'Ausente');
-                        setSelectedApt(prev => prev ? { ...prev, status: 'Ausente' } : null);
-                      }}
-                      className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-100 cursor-pointer"
-                    >
-                      Ausente
-                    </button>
+                    {selectedApt.status !== 'Confirmado' && selectedApt.status !== 'Finalizado' && (
+                      <button
+                        onClick={() => {
+                          onUpdateAppointmentStatus(selectedApt.id, 'Confirmado');
+                          setSelectedApt(null);
+                        }}
+                        className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        Confirmar
+                      </button>
+                    )}
+                    {selectedApt.status !== 'Finalizado' && (
+                      <button
+                        onClick={() => {
+                          onUpdateAppointmentStatus(selectedApt.id, 'Finalizado');
+                          setSelectedApt(null);
+                        }}
+                        className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold cursor-pointer"
+                      >
+                        Finalizar
+                      </button>
+                    )}
+                    {selectedApt.status !== 'Ausente' && selectedApt.status !== 'Finalizado' && (
+                      <button
+                        onClick={() => {
+                          onUpdateAppointmentStatus(selectedApt.id, 'Ausente');
+                          setSelectedApt(null);
+                        }}
+                        className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl border border-slate-100 cursor-pointer"
+                      >
+                        Ausente
+                      </button>
+                    )}
                     {deleteConfirmId === selectedApt.id ? (
                       <div className="flex gap-1 items-center bg-red-50 p-1 rounded-xl border border-red-100 animate-pulse">
                         <span className="text-[8px] text-red-600 font-bold px-1 select-none">Excluir?</span>

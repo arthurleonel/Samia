@@ -21,6 +21,8 @@ export default function ServicosView({
   onDeleteService,
   onEditService,
 }: ServicosViewProps) {
+  const visibleServices = services.filter(srv => !srv.deleted);
+
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
       {/* Title Header */}
@@ -39,13 +41,13 @@ export default function ServicosView({
       </div>
 
       {/* Services Listing */}
-      {services.length === 0 ? (
+      {visibleServices.length === 0 ? (
         <div className="bg-white p-12 text-center rounded-3xl border border-slate-100 shadow-xs text-xs text-slate-400 italic">
           Nenhum serviço cadastrado. clique em "+ Novo serviço" para começar.
         </div>
       ) : (
         <div className="space-y-3">
-          {services.map(srv => (
+          {visibleServices.map(srv => (
             <div
               key={srv.id}
               className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-slate-50/10"

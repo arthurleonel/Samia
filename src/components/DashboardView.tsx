@@ -55,6 +55,74 @@ export default function DashboardView({
   const faltasCount = appointments.filter(a => a.status === 'Ausente').length;
   const taxaFaltas = appointments.length > 0 ? ((faltasCount / appointments.length) * 100).toFixed(1) : '0.0';
 
+  // Last 6 months calculation (real metrics)
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    return {
+      monthLabel: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+      monthIndex: d.getMonth(),
+      year: d.getFullYear(),
+      total: 0
+    };
+  });
+
+  appointments.forEach(a => {
+    if (a.status === 'Confirmado' || a.status === 'Finalizado') {
+      const ad = new Date(a.date + 'T12:00:00');
+      const am = ad.getMonth();
+      const ay = ad.getFullYear();
+      const mBucket = last6Months.find(bucket => bucket.monthIndex === am && bucket.year === ay);
+      if (mBucket) {
+        mBucket.total += a.value;
+      }
+    }
+  });
+
+  const maxMonthValue = Math.max(...last6Months.map(m => m.total), 1);
+  const points6Months = last6Months.map((m, i) => {
+    const x = 30 + i * 85; // fit in 500px width beautifully
+    const ratio = m.total / (maxMonthValue * 1.15);
+    const y = 130 - (ratio * 100);
+    return { x, y, total: m.total, label: m.monthLabel };
+  });
+
+  const areaD = `M ${points6Months[0].x},130 ` + 
+    points6Months.map(p => `L ${p.x},${p.y}`).join(' ') + 
+    ` L ${points6Months[points6Months.length - 1].x},130 Z`;
+
+  const lineD = `M ` + points6Months.map(p => `${p.x},${p.y}`).join(' L ');
+
+  // Current Week Day calculation (real metrics)
+  const getStartOfWeek = (d: Date) => {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day;
+    return new Date(date.setDate(diff));
+  };
+
+  const startOfWeek = getStartOfWeek(new Date());
+  const daysOfWeek = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return {
+      dayLabel: d.toLocaleDateString('pt-BR', { weekday: 'short' }),
+      dateStr: d.toLocaleDateString('en-CA'),
+      count: 0
+    };
+  });
+
+  appointments.forEach(a => {
+    if (a.status !== 'Ausente') {
+      const dBucket = daysOfWeek.find(day => day.dateStr === a.date);
+      if (dBucket) {
+        dBucket.count++;
+      }
+    }
+  });
+
+  const maxDayCount = Math.max(...daysOfWeek.map(d => d.count), 1);
+
   return (
     <div className="space-y-6 pb-12 overflow-y-auto h-full pr-1">
       {/* Top Banner Subscription Info */}
@@ -201,27 +269,35 @@ export default function DashboardView({
 
               {/* Filled Area */}
               <path 
-                d={`M 10,130 L 100,125 L 190,120 L 280,110 L 370,105 L 460,${130 - (totalFaturamento > 0 ? (totalFaturamento / 200) * 100 : 20)} Z`} 
+                d={areaD} 
                 fill="url(#chartGrad)" 
               />
               {/* Stroke Trend line */}
               <path 
-                d={`M 10,130 Q 100,125 190,120 T 280,110 T 370,105 T 460,${130 - (totalFaturamento > 0 ? (totalFaturamento / 200) * 100 : 20)}`} 
+                d={lineD} 
                 stroke={customPrimary} 
                 strokeWidth="2.5" 
                 strokeLinecap="round" 
               />
 
-              {/* Interactive Dot */}
-              <circle cx="460" cy={130 - (totalFaturamento > 0 ? (totalFaturamento / 200) * 100 : 20)} r="5" fill={customPrimary} stroke="#fff" strokeWidth="2" />
+              {/* Interactive Dots for months */}
+              {points6Months.map((p, idx) => (
+                <circle 
+                  key={idx} 
+                  cx={p.x} 
+                  cy={p.y} 
+                  r="4" 
+                  fill={customPrimary} 
+                  stroke="#fff" 
+                  strokeWidth="1.5" 
+                  title={`R$ ${p.total}`} 
+                />
+              ))}
             </svg>
             <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1 px-2">
-              <span>dez</span>
-              <span>jan</span>
-              <span>fev</span>
-              <span>mar</span>
-              <span>abr</span>
-              <span>mai 2026</span>
+              {last6Months.map((m, i) => (
+                <span key={i} className="capitalize">{m.monthLabel}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -237,31 +313,54 @@ export default function DashboardView({
               {/* Horizontal baseline */}
               <line x1="0" y1="130" x2="500" y2="130" stroke="#e2e8f0" strokeWidth="1" />
 
-              {/* Sunday Bar */}
-              <rect x="35" y="130" width="25" height="1" rx="4" fill="#cbd5e1" />
-              {/* Monday Bar */}
-              <rect x="100" y="130" width="25" height="1" rx="4" fill="#cbd5e1" />
-              {/* Tuesday Bar */}
-              <rect x="165" y="130" width="25" height="1" rx="4" fill="#cbd5e1" />
-              {/* Wednesday Bar */}
-              <rect x="230" y="130" width="25" height="1" rx="4" fill="#cbd5e1" />
-              
-              {/* Thursday Bar (has 2 slots, e.g. 70 height) */}
-              <rect x="295" y="55" width="25" height="75" rx="4" fill={customPrimary} className="opacity-80" />
-              <text x="307" y="45" fill="#334155" fontSize="10" fontWeight="600" textAnchor="middle">2</text>
+              {daysOfWeek.map((day, i) => {
+                const barWidth = 24;
+                const x = 32 + i * 65; // spacing across 500 px
+                const barHeight = day.count === 0 ? 2 : Math.max(2, (day.count / maxDayCount) * 110);
+                const y = 130 - barHeight;
+                const isToday = day.dateStr === todayStr;
 
-              {/* Friday Bar (has 1 slot, e.g. 40 height) */}
-              <rect x="360" y="90" width="25" height="40" rx="4" fill={customPrimary} className="opacity-50" />
-              <text x="372" y="80" fill="#334155" fontSize="10" fontWeight="600" textAnchor="middle">1</text>
-
-              {/* Saturday Bar */}
-              <rect x="425" y="130" width="25" height="2" rx="4" fill="#cbd5e1" />
+                return (
+                  <g key={i}>
+                    <rect 
+                      x={x} 
+                      y={y} 
+                      width={barWidth} 
+                      height={barHeight} 
+                      rx="4" 
+                      fill={day.count > 0 ? customPrimary : '#cbd5e1'} 
+                      className="transition-all hover:opacity-85"
+                      opacity={isToday ? 1 : 0.75}
+                    />
+                    {day.count > 0 && (
+                      <text 
+                        x={x + barWidth / 2} 
+                        y={y - 8} 
+                        fill="#334155" 
+                        fontSize="9" 
+                        fontWeight="700" 
+                        textAnchor="middle"
+                      >
+                        {day.count}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
             </svg>
             <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1 px-2">
-              <span className="min-w-[40px] text-center">domingo</span>
-              <span className="min-w-[40px] text-center">terça</span>
-              <span className="min-w-[40px] text-center">quinta</span>
-              <span className="min-w-[40px] text-center">sábado</span>
+              {daysOfWeek.map((day, idx) => {
+                const isToday = day.dateStr === todayStr;
+                return (
+                  <span 
+                    key={idx} 
+                    className={`min-w-[40px] text-center capitalize ${isToday ? 'font-bold' : ''}`}
+                    style={isToday ? { color: customPrimary } : undefined}
+                  >
+                    {day.dayLabel}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>

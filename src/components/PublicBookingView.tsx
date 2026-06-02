@@ -30,10 +30,11 @@ export default function PublicBookingView({
   appointments,
   onConfirmBooking,
 }: PublicBookingViewProps) {
-  const activeServices = services.filter(s => s.status === 'Ativo' && s.visibleInBooking);
+  const activeServices = services.filter(s => s.status === 'Ativo' && s.visibleInBooking && !s.deleted);
   const activeProfessionals = professionals.filter(p => p.status === 'Ativo');
 
-  const [step, setStep] = useState(1);
+  // Step 0 is the welcome selector asking: "Já é cliente ou novo?"
+  const [step, setStep] = useState(0); 
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(activeProfessionals[0]?.id || '');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -110,13 +111,22 @@ export default function PublicBookingView({
   };
 
   const handlePrevStep = () => {
-    setStep(prev => prev - 1);
+    if (step === 1) {
+      setStep(0);
+    } else {
+      setStep(prev => prev - 1);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim() || !clientPhone.trim()) {
       alert('Por favor, preencha o seu nome e telefone WhatsApp.');
+      return;
+    }
+
+    if (isNewClient && !clientNotes.trim()) {
+      alert('Por favor, digite o motivo de seu contato ou dúvida.');
       return;
     }
 
@@ -144,8 +154,8 @@ export default function PublicBookingView({
     setConfirmedDetails({
       serviceName: selectedService?.name,
       professionalName: selectedProfessional?.name,
-      date: selectedDate,
-      time: selectedTime,
+      date: isNewClient ? null : selectedDate,
+      time: isNewClient ? null : selectedTime,
     });
     setBookingConfirmed(true);
   };
@@ -154,53 +164,71 @@ export default function PublicBookingView({
   const primaryColor = settings.customPrimary || '#6366f1';
 
   if (bookingConfirmed && confirmedDetails) {
-    const formattedDate = new Date(confirmedDetails.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+    const isNew = isNewClient;
+    const formattedDate = confirmedDetails.date ? new Date(confirmedDetails.date + 'T00:00:00').toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric'
-    });
+    }) : '';
 
     return (
       <div 
-        className="min-h-screen flex flex-col justify-center items-center p-4 font-sans transition-all duration-300"
+        className="min-h-screen flex flex-col justify-center items-center p-4 font-sans transition-all duration-300 animate-fade-in"
         style={{ backgroundColor: settings.customBackground || '#f8fafc' }}
       >
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden animate-fade-in p-8 text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-emerald-550 flex items-center justify-center text-white shadow-lg shadow-emerald-550/20">
+        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden p-8 text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: primaryColor }}>
             <Check size={32} strokeWidth={3} className="text-white" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-800">Agendamento Confirmado!</h2>
-            <p className="text-xs text-slate-500 font-medium">Seu horário foi reservado com sucesso e incluído na agenda.</p>
+            <h2 className="text-xl font-bold text-slate-800">
+              {isNew ? 'Solicitação Enviada com Sucesso!' : 'Agendamento Confirmado!'}
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              {isNew 
+                ? 'Nossa equipe de atendimento foi notificada e já abriu sua negociação em nosso canal CRM. Entraremos em contato via WhatsApp o mais breve possível.' 
+                : 'Seu horário foi reservado com sucesso e incluído na agenda.'}
+            </p>
           </div>
 
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 text-left text-xs space-y-3">
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-450 block">Serviço</span>
-              <span className="font-bold text-slate-800 text-sm capitalize">{confirmedDetails.serviceName}</span>
+              <span className="text-[10px] uppercase font-bold text-slate-455 block">Serviço de Interesse</span>
+              <span className="font-bold text-slate-800 text-sm capitalize">{confirmedDetails.serviceName || 'Tratamento Estético'}</span>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-450 block">Data</span>
-                <span className="font-semibold text-slate-800 capitalize">{formattedDate.replace('-feira', '')}</span>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-450 block">Horário</span>
-                <span className="font-bold text-slate-800 text-sm font-mono">{confirmedDetails.time}</span>
-              </div>
-            </div>
+            {!isNew && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-455 block">Data</span>
+                    <span className="font-semibold text-slate-800 capitalize">{formattedDate.replace('-feira', '')}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-455 block">Horário</span>
+                    <span className="font-bold text-slate-800 text-sm font-mono">{confirmedDetails.time}</span>
+                  </div>
+                </div>
 
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-450 block">Profissional</span>
-              <span className="font-semibold text-slate-700 capitalize">{confirmedDetails.professionalName}</span>
-            </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-455 block">Profissional</span>
+                  <span className="font-semibold text-slate-700 capitalize">{confirmedDetails.professionalName}</span>
+                </div>
+              </>
+            )}
 
-            {settings.address && (
+            {isNew && clientNotes && (
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-455 block">Sua Mensagem / Motivo</span>
+                <span className="text-slate-600 block italic leading-relaxed font-sans mt-0.5">{clientNotes}</span>
+              </div>
+            )}
+
+            {settings.address && !isNew && (
               <div className="border-t pt-2.5 mt-1 border-slate-200/50">
-                <span className="text-[10px] uppercase font-bold text-slate-450 block">Endereço de Atendimento</span>
+                <span className="text-[10px] uppercase font-bold text-slate-455 block">Endereço de Atendimento</span>
                 <span className="text-slate-600 leading-relaxed font-sans">{settings.address}</span>
               </div>
             )}
@@ -208,17 +236,18 @@ export default function PublicBookingView({
 
           <div className="space-y-2 pt-2">
             <a 
-              href={`https://wa.me/${settings.whatsapp.replace(/\D/g, '')}?text=Olá! Acabei de realizar um agendamento online de ${confirmedDetails.serviceName} para o dia ${confirmedDetails.date} às ${confirmedDetails.time}.`}
+              href={`https://wa.me/${settings.whatsapp.replace(/\D/g, '')}?text=Olá! Sou ${clientName}. Acabei de enviar uma solicitação de atendimento online de ${confirmedDetails.serviceName || 'Tratamento'} pelo CRM.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm"
+              className="w-full py-3 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm hover:opacity-95"
+              style={{ backgroundColor: '#16a34a' }}
             >
               <Phone size={14} /> Falar WhatsApp com Clínica
             </a>
             
             <button
               onClick={() => {
-                setStep(1);
+                setStep(0);
                 setSelectedServiceId('');
                 setSelectedTime('');
                 setClientName('');
@@ -228,7 +257,7 @@ export default function PublicBookingView({
                 setBookingConfirmed(false);
                 setConfirmedDetails(null);
               }}
-              className="w-full py-3 bg-slate-100 hover:bg-slate-150 text-slate-600 rounded-2xl font-bold text-xs transition"
+              className="w-full py-3 bg-slate-100 hover:bg-slate-150 text-slate-600 rounded-2xl font-bold text-xs transition cursor-pointer"
             >
               Fazer outro Agendamento
             </button>
@@ -287,25 +316,73 @@ export default function PublicBookingView({
           </div>
         )}
 
-        {/* Flow indicator step bar */}
-        <div className="flex border-b border-slate-50">
-          <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 1 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
-            1. Serviço
+        {/* Flow indicator step bar - Only displayed when step is > 0 and client is already client (not new client flow) */}
+        {step > 0 && !isNewClient && (
+          <div className="flex border-b border-slate-50">
+            <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 1 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
+              1. Serviço
+            </div>
+            <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 2 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
+              2. Data e Hora
+            </div>
+            <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 3 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
+              3. Seus Dados
+            </div>
           </div>
-          <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 2 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
-            2. Data e Hora
-          </div>
-          <div className={`flex-1 py-3 text-center text-[10px] font-bold border-b-2 ${step === 3 ? 'border-slate-800 text-slate-800 bg-slate-50/40' : 'border-transparent text-slate-400'}`}>
-            3. Seus Dados
-          </div>
-        </div>
+        )}
 
         {/* Content Body based on active step */}
         <div className="p-8">
+
+          {/* STEP 0: WELCOME & SELECTION */}
+          {step === 0 && (
+            <div className="space-y-6 text-center py-6 animate-fade-in font-sans">
+              <div className="space-y-2">
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Como deseja iniciar seu agendamento?</h3>
+                <p className="text-[11px] text-slate-450 leading-relaxed max-w-sm mx-auto">Selecione se você já é cadastrado na nossa clínica ou se é sua primeira visita para darmos prosseguimento.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNewClient(false);
+                    setStep(1); // Go to choose service
+                  }}
+                  className="p-5 bg-white border border-slate-150 hover:border-slate-300 hover:bg-slate-50/50 rounded-2xl text-left transition duration-200 flex items-start gap-4 cursor-pointer"
+                >
+                  <span className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 transition duration-250 shrink-0 select-none">
+                    <User size={18} />
+                  </span>
+                  <div>
+                    <span className="font-bold text-slate-800 text-xs block">Sim, já sou cliente</span>
+                    <span className="text-[10px] text-slate-450 mt-0.5 block">Escolha as opções de procedimento, data e horário diretamente na agenda clínica.</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNewClient(true);
+                    setStep(4); // Go to simple Lead Capture form which bypasses the calendar selection
+                  }}
+                  className="p-5 bg-white border border-slate-150 hover:border-slate-300 hover:bg-slate-50/50 rounded-2xl text-left transition duration-200 flex items-start gap-4 cursor-pointer"
+                >
+                  <span className="p-2.5 rounded-xl bg-amber-50 text-amber-600 transition duration-250 shrink-0 select-none">
+                    <Sparkles size={18} />
+                  </span>
+                  <div>
+                    <span className="font-bold text-slate-800 text-xs block">Não, sou cliente novo</span>
+                    <span className="text-[10px] text-slate-450 mt-0.5 block">Preencha seus dados de atendimento e envie uma solicitação direta de contato ao nosso funil.</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
           
-          {/* STEP 1: CHOOSE SERVICE */}
+          {/* STEP 1: CHOOSE SERVICE (EXISTING CLIENT) */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in">
               <div className="space-y-1">
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">O que você deseja realizar hoje?</h3>
                 <p className="text-[11px] text-slate-455">Selecione o tratamento ou procedimento desejado da nossa lista.</p>
@@ -355,11 +432,17 @@ export default function PublicBookingView({
               )}
 
               {activeServices.length > 0 && (
-                <div className="pt-4">
+                <div className="pt-4 flex gap-2">
+                  <button
+                    onClick={() => setStep(0)}
+                    className="w-1/3 py-3 bg-slate-100 hover:bg-slate-150 text-slate-600 rounded-2xl text-xs font-bold transition cursor-pointer"
+                  >
+                    ← Voltar
+                  </button>
                   <button
                     onClick={handleNextStep}
                     disabled={!selectedServiceId}
-                    className="w-full py-3 text-white rounded-2xl text-xs font-bold font-sans tracking-wide transition shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="flex-1 py-3 text-white rounded-2xl text-xs font-bold font-sans tracking-wide transition shadow-sm disabled:opacity-50 cursor-pointer"
                     style={{ backgroundColor: primaryColor }}
                   >
                     Escolher Agenda e Profissional →
@@ -369,9 +452,9 @@ export default function PublicBookingView({
             </div>
           )}
 
-          {/* STEP 2: CHOOSE DATE & TIME */}
+          {/* STEP 2: CHOOSE DATE & TIME (EXISTING CLIENT) */}
           {step === 2 && (
-            <div className="space-y-5">
+            <div className="space-y-5 animate-fade-in">
               
               {/* Back selector link */}
               <button 
@@ -434,7 +517,7 @@ export default function PublicBookingView({
                     {timeSlots.length === 0 ? (
                       <p className="text-[11px] text-slate-400 italic">Nenhum horário disponível para a data selecionada.</p>
                     ) : (
-                      <div className="grid grid-cols-4 gap-2 max-h-[150px] overflow-y-auto pr-1 no-scrollbar">
+                      <div className="grid grid-cols-4 gap-2 max-h-[150px] overflow-y-auto pr-1 no-scrollbar text-xs">
                         {timeSlots.map((time) => {
                           const isSelectedSlot = selectedTime === time;
                           const isBooked = appointments && appointments.some(apt => 
@@ -457,7 +540,7 @@ export default function PublicBookingView({
                                   ? 'bg-slate-100 border-slate-200 text-slate-300 line-through opacity-50 cursor-not-allowed'
                                   : isSelectedSlot 
                                     ? 'bg-indigo-50/30 font-extrabold' 
-                                    : 'border-slate-150 text-slate-600 bg-white hover:border-slate-350 hover:bg-slate-50/50 cursor-pointer'
+                                    : 'border-slate-150 text-slate-600 bg-white hover:border-slate-355 hover:bg-slate-50/50 cursor-pointer'
                               }`}
                             >
                               {time}
@@ -484,9 +567,9 @@ export default function PublicBookingView({
             </div>
           )}
 
-          {/* STEP 3: FILL IN CONTAC DETAILS */}
+          {/* STEP 3: FILL IN CONTACT DETAILS (EXISTING CLIENT) */}
           {step === 3 && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in font-sans">
               
               {/* Back link */}
               <button 
@@ -498,40 +581,12 @@ export default function PublicBookingView({
               </button>
 
               <div className="space-y-2.5">
-                {/* Segmented control for Customer Type */}
-                <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsNewClient(false)}
-                    className={`flex-1 py-2 text-center text-[10px] uppercase font-extrabold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
-                      !isNewClient 
-                        ? 'bg-white text-slate-800 shadow-xs' 
-                        : 'text-slate-450 hover:text-slate-700'
-                    }`}
-                  >
-                    Já sou Cliente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsNewClient(true)}
-                    className={`flex-1 py-1.5 text-center text-[10px] uppercase font-extrabold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
-                      isNewClient 
-                        ? 'bg-white text-slate-800 shadow-xs' 
-                        : 'text-slate-450 hover:text-slate-700'
-                    }`}
-                  >
-                    👋 Sou novo por aqui
-                  </button>
-                </div>
-
                 <div className="space-y-1">
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                    {isNewClient ? 'Cadastrar Minha Negociação' : 'Insira seus dados para contato'}
+                    Confirmar Meus Dados de Cadastro
                   </h3>
                   <p className="text-[11px] text-slate-455">
-                    {isNewClient 
-                      ? 'Preencha seus dados de contato para entrar diretamente no funil de negociações CRM da clínica.'
-                      : 'Utilizaremos essas informações para localizar seu cadastro e agendar o procedimento.'}
+                    Utilizaremos essas informações para localizar seu cadastro anterior e agendar o procedimento na agenda clínica.
                   </p>
                 </div>
 
@@ -563,7 +618,7 @@ export default function PublicBookingView({
                         value={clientPhone}
                         onChange={(e) => setClientPhone(formatPhone(e.target.value))}
                         onFocus={(e) => e.target.select()}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-750 focus:outline-none focus:ring-1 focus:ring-slate-350 font-mono"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-750 focus:outline-none font-mono"
                         placeholder="Ex: (48) 99888-7711"
                       />
                     </div>
@@ -578,7 +633,7 @@ export default function PublicBookingView({
                         type="email"
                         value={clientEmail}
                         onChange={(e) => setClientEmail(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-750 focus:outline-none"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-755 focus:outline-none"
                         placeholder="Ex: ana.souza@email.com"
                       />
                     </div>
@@ -586,7 +641,7 @@ export default function PublicBookingView({
 
                   {/* Notes / Observations */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">OBSERVAÇÕES ADICIONAIS (OPCIONAL)</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">OBSERVAÇÕES (OPCIONAL)</label>
                     <textarea
                       value={clientNotes}
                       onChange={(e) => setClientNotes(e.target.value)}
@@ -603,7 +658,7 @@ export default function PublicBookingView({
                       <span className="text-slate-450 block font-sans font-medium">Procedimento Selecionado:</span>
                       <span className="font-bold text-slate-750 uppercase text-[9px]">{selectedService?.name}</span>
                     </div>
-                    <span className="text-slate-900 font-extrabold text-xs">R$ {selectedService?.price.toFixed(2)}</span>
+                    <span className="text-slate-900 font-extrabold text-xs">{formatCurrency(selectedService?.price || 0)}</span>
                   </div>
 
                   <button
@@ -614,6 +669,115 @@ export default function PublicBookingView({
                     Confirmar e Agendar Horário 🌸
                   </button>
                 </div>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 4: REGISTRATION FORM FOR NEW CLIENTS (LEAD SPLIT FLOW) */}
+          {step === 4 && (
+            <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in font-sans">
+              
+              <button 
+                type="button"
+                onClick={() => setStep(0)}
+                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft size={12} /> Voltar para o Início
+              </button>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Identificação de Novo Cliente</h3>
+                <p className="text-[11px] text-slate-455">
+                  Por ser seu primeiro contato, preencha os seus dados de atendimento para abrirmos sua negociação no CRM de nossa equipe.
+                </p>
+              </div>
+
+              <div className="space-y-3.5">
+                {/* Full Name */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">SEU NOME COMPLETO *</label>
+                  <div className="relative">
+                    <User size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      required
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
+                      placeholder="Ex: Amanda Santos"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone WhatsApp */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">SEU CELULAR WHATSAPP *</label>
+                  <div className="relative">
+                    <Phone size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="tel"
+                      required
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(formatPhone(e.target.value))}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-750 focus:outline-none font-mono"
+                      placeholder="Ex: (48) 99888-7711"
+                    />
+                  </div>
+                </div>
+
+                {/* Email (Optional) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">SEU E-MAIL (OPCIONAL)</label>
+                  <div className="relative">
+                    <FileText size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="email"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-750 focus:outline-none"
+                      placeholder="Ex: amanda@email.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Choice of interest service */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">PROCEDIMENTO DE INTERESSE *</label>
+                  <select
+                    required
+                    value={selectedServiceId}
+                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="">Selecione o procedimento de interesse...</option>
+                    {activeServices.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({formatCurrency(s.price)})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Motivo do contato / Observações */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block font-mono">MOTIVO DO CONTATO OBRIGATÓRIO *</label>
+                  <textarea
+                    required
+                    value={clientNotes}
+                    onChange={(e) => setClientNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
+                    placeholder="Nos conte brevemente qual o motivo de seu contato, dúvidas ou sugestão de data de preferência..."
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full py-3.5 text-white rounded-2xl text-xs font-bold font-sans tracking-wide transition shadow-sm cursor-pointer"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Enviar Solicitação ao CRM 💌
+                </button>
               </div>
             </form>
           )}

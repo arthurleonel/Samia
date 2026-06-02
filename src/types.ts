@@ -15,6 +15,7 @@ export interface Service {
   duration: number; // in minutes
   visibleInBooking: boolean;
   status: 'Ativo' | 'Inativo';
+  deleted?: boolean;
 }
 
 export interface Absence {

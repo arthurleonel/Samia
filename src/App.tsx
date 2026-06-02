@@ -454,6 +454,16 @@ export default function App() {
   }, [settings, activeTenantId, loadedTenantId]);
 
   useEffect(() => {
+    if (settings?.name) {
+      document.title = `${settings.name} - Leonel CRM`;
+    } else if (session?.role === 'admin') {
+      document.title = 'Superadmin - Leonel CRM';
+    } else {
+      document.title = 'Leonel CRM - Estética Avançada';
+    }
+  }, [settings?.name, session]);
+
+  useEffect(() => {
     if (loadedTenantId !== activeTenantId) return;
     if (!activeTenantId) return;
     localStorage.setItem(`lumini_tenant_${activeTenantId}_alerts`, JSON.stringify(alerts));
@@ -577,7 +587,6 @@ export default function App() {
   // Pricing storage sync
   useEffect(() => {
     localStorage.setItem('lumini_plans_pricing', JSON.stringify(pricing));
-    syncSaasPricing(pricing);
   }, [pricing]);
 
   // Plan Features Config and customization (SaaS control, can be managed in Superadmin)
@@ -632,7 +641,6 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('lumini_plans_features', JSON.stringify(planFeatures));
-    syncSaasPlanFeatures(planFeatures);
   }, [planFeatures]);
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -687,6 +695,10 @@ export default function App() {
     address: '',
     notes: '',
   });
+
+  const [showQuickClient, setShowQuickClient] = useState(false);
+  const [quickClientName, setQuickClientName] = useState('');
+  const [quickClientPhone, setQuickClientPhone] = useState('');
 
   // New Service Builder
   const [newService, setNewService] = useState({
@@ -837,7 +849,7 @@ export default function App() {
     let finalClientId = existingC?.id;
 
     if (bookingData.isNewClient) {
-      // Create new Lead in the CRM funil
+      // Create new Lead in the CRM funnel ONLY - do not create client or appointment in the agenda
       const newLead: Lead = {
         id: generateUniqueId('lead'),
         tenantId: activeTenantId,
@@ -845,53 +857,39 @@ export default function App() {
         phone: bookingData.clientPhone,
         email: bookingData.clientEmail,
         stage: 'novo',
-        value: bookingData.value,
-        interestServiceId: bookingData.serviceId,
-        notes: bookingData.notes || `Agendamento solicitado pelo Link Público para dia ${bookingData.date} às ${bookingData.time}`,
+        value: bookingData.value || 0,
+        interestServiceId: bookingData.serviceId || undefined,
+        notes: bookingData.notes || `Paciente interessado em agendamento.`,
         createdAt: new Date().toISOString()
       };
       setLeads(prev => [newLead, ...prev]);
 
-      // Create client too so they can be associated with the pending appointment
-      const newCliId = generateUniqueId('cli');
+      logActivity(`Novo LEAD no funil CRM: "${bookingData.clientName}" registrado via link de contato!`);
+      return; // Stop here!
+    }
+
+    // Existing client flow
+    if (!existingC) {
+      // Create new client if not matched
+      const newId = generateUniqueId('cli');
       const newC: Client = {
-        id: newCliId,
+        id: newId,
         name: bookingData.clientName,
         phone: bookingData.clientPhone,
         email: bookingData.clientEmail,
         birthdate: '',
         address: '',
-        notes: `Lead do Link Público - Agendamento Solicitado.`
+        notes: 'Cliente cadastrado via agendamento online público.'
       };
       setClients(prev => [...prev, newC]);
-      finalClientId = newCliId;
-
-      logActivity(`Novo LEAD no funil CRM: "${bookingData.clientName}" registrado via Link de Agendamento!`);
-    } else {
-      if (!existingC) {
-        // Create new client if not matched
-        const newId = generateUniqueId('cli');
-        const newC: Client = {
-          id: newId,
-          name: bookingData.clientName,
-          phone: bookingData.clientPhone,
-          email: bookingData.clientEmail,
-          birthdate: '',
-          address: '',
-          notes: 'Cliente cadastrado via agendamento online público.'
-        };
-        setClients(prev => [...prev, newC]);
-        finalClientId = newId;
-      }
+      finalClientId = newId;
     }
 
     // Determine status of the appointment based on requireConfirmation setting
-    // If it's a new lead, it should always start as Pendente.
-    // If it's an existing client, respect the settings configuration toggle.
-    const mustConfirm = bookingData.isNewClient || settings.requireConfirmation !== false;
+    const mustConfirm = settings.requireConfirmation !== false;
     const initialStatus: Appointment['status'] = mustConfirm ? 'Pendente' : 'Confirmado';
 
-    // 2. Add appointment
+    // Add appointment to system agenda
     const targetService = services.find(s => s.id === bookingData.serviceId);
     const servicePrice = targetService ? targetService.price : 0;
     const newApt: Appointment = {
@@ -907,7 +905,6 @@ export default function App() {
     };
     setAppointments(prev => [...prev, newApt]);
 
-    // 3. Log activity
     logActivity(`Novo agendamento online [${initialStatus}]: ${bookingData.clientName} agendou para o dia ${bookingData.date} às ${bookingData.time}`);
   };
 
@@ -942,6 +939,20 @@ export default function App() {
   const handleCreateAppointment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBooking.clientId || !newBooking.serviceId) return;
+
+    // Check for double-booking conflict for the same professional
+    const doubleBooked = appointments.some(apt => 
+      apt.date === newBooking.date && 
+      apt.time === newBooking.time && 
+      apt.professionalId === newBooking.professionalId &&
+      apt.status !== 'Cancelado'
+    );
+
+    if (doubleBooked) {
+      const pName = professionals.find(p => p.id === newBooking.professionalId)?.name || 'colaborador';
+      const proceed = window.confirm(`Conflito: O profissional ${pName} já possui um agendamento marcado para o dia ${newBooking.date} às ${newBooking.time}. Deseja confirmar este agendamento duplicado mesmo assim?`);
+      if (!proceed) return;
+    }
 
     if (appointments.length >= currentFeatures.maxAppointmentsMonth) {
       alert(`Limite de Agendamentos Mensais Atingido! Seu plano atual (${activePlanName}) permite até ${currentFeatures.maxAppointmentsMonth} agendamentos/mês. Por favor, faça um upgrade para continuar agendando.`);
@@ -1075,8 +1086,14 @@ export default function App() {
   };
 
   const handleDeleteService = (id: string) => {
-    setServices(prev => prev.filter(s => s.id !== id));
-    logActivity(`Serviço removido.`);
+    const srv = services.find(s => s.id === id);
+    if (!srv) return;
+    
+    const confirmed = window.confirm(`Deseja realmente excluir o procedimento "${srv.name}"?`);
+    if (!confirmed) return;
+
+    setServices(prev => prev.map(s => s.id === id ? { ...s, deleted: true, status: 'Inativo' } : s));
+    logActivity(`Procedimento "${srv.name}" excluído (salvo para histórico).`);
   };
 
   // Staff events
@@ -1208,7 +1225,10 @@ export default function App() {
       <SuperadminView
         tenants={tenants}
         pricing={pricing}
-        onUpdatePricing={(newPricing) => setPricing(newPricing)}
+        onUpdatePricing={(newPricing) => {
+          setPricing(newPricing);
+          syncSaasPricing(newPricing);
+        }}
         onUpdateTenantStatus={(id, status) => {
           setTenants(prev => prev.map(t => t.id === id ? { ...t, status } : t));
         }}
@@ -1227,7 +1247,10 @@ export default function App() {
         }}
         onLogout={() => setSession(null)}
         planFeatures={planFeatures}
-        onUpdatePlanFeatures={(newFeatures) => setPlanFeatures(newFeatures)}
+        onUpdatePlanFeatures={(newFeatures) => {
+          setPlanFeatures(newFeatures);
+          syncSaasPlanFeatures(newFeatures);
+        }}
         onRefreshData={refreshSaaSData}
       />
     );
@@ -2493,32 +2516,95 @@ export default function App() {
 
             <div className="space-y-3">
               {/* Client select dropdown with quick add trigger */}
-              <div className="space-y-1.5ClassName">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-mono">Paciente</label>
                   <button
                     type="button"
-                    onClick={() => setModalType('client')}
+                    onClick={() => {
+                      setShowQuickClient(!showQuickClient);
+                      setQuickClientName('');
+                      setQuickClientPhone('');
+                    }}
                     style={{ color: customPrimary }}
                     className="text-[10px] font-bold hover:underline cursor-pointer"
                   >
-                    + Criar Paciente Novo
+                    {showQuickClient ? '✕ Cancelar Cadastro' : '+ Criar Paciente Novo'}
                   </button>
                 </div>
-                <select
-                  value={newBooking.clientId}
-                  onChange={(e) => setNewBooking(prev => ({ ...prev, clientId: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
-                >
-                  <option value="">Selecione um cliente...</option>
-                  {pendingLeadConversion && (
-                    <option value="convert-lead-current">Criar cadastro: {pendingLeadConversion.name} (Lead)</option>
-                  )}
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id} className="capitalize">{c.name}</option>
-                  ))}
-                </select>
+
+                {showQuickClient ? (
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 animate-fade-in">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Cadastro Rápido de Paciente</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-mono block">Nome</label>
+                        <input
+                          type="text"
+                          placeholder="Nome do paciente"
+                          value={quickClientName}
+                          onChange={(e) => setQuickClientName(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-mono block">Telefone</label>
+                        <input
+                          type="text"
+                          placeholder="(11) 99999-9999"
+                          value={quickClientPhone}
+                          onChange={(e) => setQuickClientPhone(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!quickClientName.trim() || !quickClientPhone.trim()) {
+                          alert('Por favor, preencha o Nome e Telefone do paciente.');
+                          return;
+                        }
+                        if (clients.length >= currentFeatures.maxClients) {
+                          alert(`Limite de Clientes Atingido! Seu plano atual (${activePlanName}) permite até ${currentFeatures.maxClients} clientes. Por favor, faça um upgrade.`);
+                          return;
+                        }
+                        const added: Client = {
+                          id: generateUniqueId('cli'),
+                          name: quickClientName.trim(),
+                          phone: quickClientPhone.trim(),
+                          email: '',
+                          birthdate: '1995-01-01',
+                          address: '',
+                          notes: '',
+                        };
+                        setClients(prev => [...prev, added]);
+                        logActivity(`Novo cliente por cadastro rápido: ${added.name}`);
+                        setNewBooking(prev => ({ ...prev, clientId: added.id }));
+                        setShowQuickClient(false);
+                      }}
+                      style={{ backgroundColor: customPrimary }}
+                      className="w-full py-2 rounded-xl text-white font-semibold text-xs hover:opacity-95 cursor-pointer"
+                    >
+                      Salvar e Selecionar Paciente
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={newBooking.clientId}
+                    onChange={(e) => setNewBooking(prev => ({ ...prev, clientId: e.target.value }))}
+                    required
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="">Selecione um cliente...</option>
+                    {pendingLeadConversion && (
+                      <option value="convert-lead-current">Criar cadastro: {pendingLeadConversion.name} (Lead)</option>
+                    )}
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id} className="capitalize">{c.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Service Select */}
