@@ -433,7 +433,7 @@ export default function AgendamentosView({
                         onChange={(e) => setEditProfessionalId(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-100 bg-slate-50 rounded-xl focus:bg-white outline-none"
                       >
-                        {professionals.map(p => (
+                        {professionals.filter(p => !p.deleted || p.id === editProfessionalId).map(p => (
                           <option key={p.id} value={p.id}>{p.name} ({p.role})</option>
                         ))}
                       </select>

@@ -2686,7 +2686,7 @@ export default function App() {
                   required
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
                 >
-                  {professionals.map(p => (
+                  {professionals.filter(p => !p.deleted || p.id === newBooking.professionalId).map(p => (
                     <option key={p.id} value={p.id}>{p.name} · {p.role}</option>
                   ))}
                 </select>
@@ -3048,7 +3048,7 @@ export default function App() {
                   required
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs"
                 >
-                  {professionals.map(p => (
+                  {professionals.filter(p => !p.deleted || p.id === newAbsence.professionalId).map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
