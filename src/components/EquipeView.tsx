@@ -10,6 +10,7 @@ interface EquipeViewProps {
   onOpenNewAbsence: () => void;
   onDeleteAbsence: (profId: string, absId: string) => void;
   onEditProfessional: (prof: Professional) => void;
+  onDeleteProfessional: (id: string) => void;
   onToggleLoginStatus: (id: string, email?: string, password?: string) => void;
   allowAbsences: boolean;
   onShowUpgradeModal: (featureName: string) => void;
@@ -23,6 +24,7 @@ export default function EquipeView({
   onOpenNewAbsence,
   onDeleteAbsence,
   onEditProfessional,
+  onDeleteProfessional,
   onToggleLoginStatus,
   allowAbsences,
   onShowUpgradeModal,
@@ -101,7 +103,7 @@ export default function EquipeView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
-              {professionals.map(prof => (
+              {professionals.filter(p => !p.deleted).map(prof => (
                 <tr key={prof.id} className="hover:bg-slate-50/20">
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2.5">
@@ -138,12 +140,25 @@ export default function EquipeView({
                     )}
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <button
-                      onClick={() => onEditProfessional(prof)}
-                      className="px-3 py-1.5 border border-slate-100 text-[10px] font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      ✏️ Editar
-                    </button>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => onEditProfessional(prof)}
+                        className="px-2.5 py-1.5 border border-slate-100 text-[10px] font-semibold text-slate-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const confirmed = window.confirm(`Deseja realmente excluir o profissional "${prof.name}"?`);
+                          if (confirmed) {
+                            onDeleteProfessional(prof.id);
+                          }
+                        }}
+                        className="px-2.5 py-1.5 border border-red-100 text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
+                      >
+                        🗑️ Excluir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -159,11 +174,11 @@ export default function EquipeView({
           Ausências Programadas / Bloqueios de Agenda
         </h3>
 
-        {professionals.every(p => p.absences.length === 0) ? (
+        {professionals.filter(p => !p.deleted).every(p => p.absences.length === 0) ? (
           <p className="text-xs text-slate-400 italic">Nenhum bloqueio ou ausência cadastrada atualmente.</p>
         ) : (
           <div className="space-y-3">
-            {professionals.flatMap(p => 
+            {professionals.filter(p => !p.deleted).flatMap(p => 
               p.absences.map(abs => (
                 <div key={abs.id} className="p-4 rounded-2xl bg-[#FAF7F6] border border-slate-100 flex items-center justify-between gap-4">
                   <div className="space-y-1">

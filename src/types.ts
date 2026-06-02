@@ -32,6 +32,7 @@ export interface Professional {
   name: string;
   role: string; // e.g. "Esteticista", "Biomédica Esteta"
   status: 'Ativo' | 'Inativo';
+  deleted?: boolean;
   loginCreated: boolean;
   loginEmail?: string;
   loginPassword?: string;

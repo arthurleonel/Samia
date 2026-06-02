@@ -592,7 +592,15 @@ export default function App() {
   // Plan Features Config and customization (SaaS control, can be managed in Superadmin)
   const [planFeatures, setPlanFeatures] = useState<Record<string, PlanFeatures>>(() => {
     const saved = localStorage.getItem('lumini_plans_features');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed['Profissional']) {
+        parsed['Profissional'].allowFinance = false;
+        parsed['Profissional'].allowStock = false;
+        parsed['Profissional'].description = 'WhatsApp, CRM, 2 colaboradores e disparo rápido. (Estoque e Financeiro exclusivos do plano Clínica)';
+      }
+      return parsed;
+    }
     return {
       'Grátis': {
         maxAppointmentsMonth: 5,
@@ -617,10 +625,10 @@ export default function App() {
         allowMultiAgenda: false,
         allowAbsences: false,
         allowOnlineBooking: true,
-        allowFinance: true,
-        allowStock: true,
+        allowFinance: false,
+        allowStock: false,
         allowCRM: true,
-        description: 'WhatsApp, CRM, 2 colaboradores, 100 clientes e disparo rápido.',
+        description: 'WhatsApp, CRM, 2 colaboradores e disparo rápido. (Estoque e Financeiro exclusivos do plano Clínica)',
       },
       'Clínica': {
         maxAppointmentsMonth: 9999,
@@ -1125,6 +1133,13 @@ export default function App() {
 
     setNewProf({ name: '', role: 'Esteticista', status: 'Ativo' });
     setModalType(null);
+  };
+
+  const handleDeleteProfessional = (id: string) => {
+    const prof = professionals.find(p => p.id === id);
+    if (!prof) return;
+    setProfessionals(prev => prev.map(p => p.id === id ? { ...p, deleted: true, status: 'Inativo' } : p));
+    logActivity(`Colaborador "${prof.name}" excluído.`);
   };
 
   const handleCreateAbsence = (e: React.FormEvent) => {
@@ -1742,6 +1757,7 @@ export default function App() {
                 setNewProf({ name: prof.name, role: prof.role, status: prof.status });
                 setModalType('professional');
               }}
+              onDeleteProfessional={handleDeleteProfessional}
               onToggleLoginStatus={(id, email, password) => {
                 setProfessionals(prev => prev.map(p => p.id === id ? { 
                   ...p, 
@@ -1867,7 +1883,7 @@ export default function App() {
                     </button>
                   ) : (
                     <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-black font-sans flex items-center gap-1 uppercase tracking-wider self-start shrink-0">
-                      Plano Profissional
+                      Plano Clínica
                     </span>
                   )}
                 </div>
@@ -1881,7 +1897,7 @@ export default function App() {
                         </span>
                         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Gestão Financeira Bloqueada</h3>
                         <p className="text-xs text-slate-500 leading-relaxed">
-                          Tenha visão geral de faturamento, controle de caixa diário, despesas clínicas e cálculo de lucros. Disponível a partir do plano <strong>Profissional</strong>.
+                          Tenha visão geral de faturamento, controle de caixa diário, despesas clínicas e cálculo de lucros. Disponível a partir do plano <strong>Clínica</strong>.
                         </p>
                         <button
                           onClick={() => handleShowUpgradeModal('Financeiro e Livro Caixa')}
@@ -2192,7 +2208,7 @@ export default function App() {
                   </button>
                 ) : (
                   <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-black font-sans flex items-center gap-1 uppercase tracking-wider self-start shrink-0">
-                    Plano Profissional
+                    Plano Clínica
                   </span>
                 )}
               </div>
@@ -2206,7 +2222,7 @@ export default function App() {
                       </span>
                       <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Auditoria de Estoque Bloqueada</h3>
                       <p className="text-xs text-slate-500 leading-relaxed">
-                        Controle produtos profissionais, registre as saídas de insumos por procedimento e receba avisos automáticos de estoque crítico. Disponível a partir do plano <strong>Profissional</strong>.
+                        Controle produtos profissionais, registre as saídas de insumos por procedimento e receba avisos automáticos de estoque crítico. Disponível a partir do plano <strong>Clínica</strong>.
                       </p>
                       <button
                         onClick={() => handleShowUpgradeModal('Controle e Auditoria de Estoques')}
