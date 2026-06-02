@@ -718,6 +718,22 @@ export default function App() {
   const [txDeleteConfirmId, setTxDeleteConfirmId] = useState<string | null>(null);
   const [stockDeleteConfirmId, setStockDeleteConfirmId] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const requestConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmModal({
+      title,
+      description,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(null);
+      }
+    });
+  };
 
   // Quick link copy helper tracking
   const [copiedLink, setCopiedLink] = useState(false);
@@ -1085,8 +1101,14 @@ export default function App() {
   };
 
   const handleDeleteAppointment = (id: string) => {
-    setAppointments(prev => prev.filter(apt => apt.id !== id));
-    logActivity(`Agendamento excluído.`);
+    requestConfirm(
+      'Excluir Agendamento',
+      'Tem certeza de que deseja excluir permanentemente este agendamento? Esta ação não pode ser desfeita.',
+      () => {
+        setAppointments(prev => prev.filter(apt => apt.id !== id));
+        logActivity(`Agendamento excluído.`);
+      }
+    );
   };
 
   const handleEditAppointment = (id: string, updatedFields: Partial<Appointment>) => {
@@ -1135,11 +1157,14 @@ export default function App() {
     const srv = services.find(s => s.id === id);
     if (!srv) return;
     
-    const confirmed = window.confirm(`Deseja realmente excluir o procedimento "${srv.name}"?`);
-    if (!confirmed) return;
-
-    setServices(prev => prev.map(s => s.id === id ? { ...s, deleted: true, status: 'Inativo' } : s));
-    logActivity(`Procedimento "${srv.name}" excluído (salvo para histórico).`);
+    requestConfirm(
+      'Excluir Procedimento',
+      `Tem certeza de que deseja excluir o procedimento "${srv.name}"? Os agendamentos deste procedimento permanecerão salvos em seu histórico.`,
+      () => {
+        setServices(prev => prev.map(s => s.id === id ? { ...s, deleted: true, status: 'Inativo' } : s));
+        logActivity(`Procedimento "${srv.name}" excluído (salvo para histórico).`);
+      }
+    );
   };
 
   // Staff events
@@ -1177,8 +1202,15 @@ export default function App() {
   const handleDeleteProfessional = (id: string) => {
     const prof = professionals.find(p => p.id === id);
     if (!prof) return;
-    setProfessionals(prev => prev.map(p => p.id === id ? { ...p, deleted: true, status: 'Inativo' } : p));
-    logActivity(`Colaborador "${prof.name}" excluído.`);
+
+    requestConfirm(
+      'Remover Colaborador',
+      `Tem certeza de que deseja excluir o profissional "${prof.name}"? Históricos de agendamento de atendimentos desse colaborador continuarão preservados.`,
+      () => {
+        setProfessionals(prev => prev.map(p => p.id === id ? { ...p, deleted: true, status: 'Inativo' } : p));
+        logActivity(`Colaborador "${prof.name}" excluído.`);
+      }
+    );
   };
 
   const handleCreateAbsence = (e: React.FormEvent) => {
@@ -1326,6 +1358,7 @@ export default function App() {
           syncSaasPlanFeatures(newFeatures);
         }}
         onRefreshData={refreshSaaSData}
+        requestConfirm={requestConfirm}
       />
     );
   }

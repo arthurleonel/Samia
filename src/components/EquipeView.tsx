@@ -155,12 +155,7 @@ export default function EquipeView({
                           ✏️ Editar
                         </button>
                         <button
-                          onClick={() => {
-                            const confirmed = window.confirm(`Deseja realmente excluir o profissional "${prof.name}"?`);
-                            if (confirmed) {
-                              onDeleteProfessional(prof.id);
-                            }
-                          }}
+                          onClick={() => onDeleteProfessional(prof.id)}
                           className="px-2.5 py-1.5 border border-red-100 text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
                         >
                           🗑️ Excluir

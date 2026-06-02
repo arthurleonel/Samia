@@ -17,6 +17,7 @@ interface SuperadminViewProps {
   onUpdatePlanFeatures: (features: Record<string, PlanFeatures>) => void;
   onRejectTenantPlanRequest?: (id: string) => void;
   onRefreshData?: () => void;
+  requestConfirm?: (title: string, description: string, onConfirm: () => void) => void;
 }
 
 export default function SuperadminView({
@@ -32,6 +33,7 @@ export default function SuperadminView({
   onUpdatePlanFeatures,
   onRejectTenantPlanRequest,
   onRefreshData,
+  requestConfirm,
 }: SuperadminViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -267,8 +269,16 @@ export default function SuperadminView({
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (confirm(`Deseja recusar a solicitação de upgrade da clínica "${t.name}"?`)) {
-                                        onRejectTenantPlanRequest?.(t.id);
+                                      if (requestConfirm) {
+                                        requestConfirm(
+                                          'Recusar Upgrade',
+                                          `Tem certeza de que deseja recusar a solicitação de upgrade da clínica "${t.name}"?`,
+                                          () => onRejectTenantPlanRequest?.(t.id)
+                                        );
+                                      } else {
+                                        if (confirm(`Deseja recusar a solicitação de upgrade da clínica "${t.name}"?`)) {
+                                          onRejectTenantPlanRequest?.(t.id);
+                                        }
                                       }
                                     }}
                                     className="px-2.5 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white font-bold rounded-lg text-[8px] uppercase tracking-wider transition cursor-pointer font-mono"
@@ -316,8 +326,16 @@ export default function SuperadminView({
                               {/* Exclusion simulation button */}
                               <button
                                 onClick={() => {
-                                  if (confirm(`Excluir permanentemente o banco de dados da clínica ${t.name}?`)) {
-                                    onDeleteTenant(t.id);
+                                  if (requestConfirm) {
+                                    requestConfirm(
+                                      'Excluir Consultório / Clínica',
+                                      `⚠️ ATENÇÃO CRÍTICA: Deseja realmente excluir permanentemente todos os registros, pacientes, agendamentos e o banco de dados da clínica "${t.name}"? Esta ação removerá totalmente e de forma irreversível os dados desta clínica do servidor.`,
+                                      () => onDeleteTenant(t.id)
+                                    );
+                                  } else {
+                                    if (confirm(`Excluir permanentemente o banco de dados da clínica ${t.name}?`)) {
+                                      onDeleteTenant(t.id);
+                                    }
                                   }
                                 }}
                                 className="p-1.5 bg-slate-950 text-slate-500 hover:text-red-400 rounded-lg border border-slate-800 hover:border-red-500/20 cursor-pointer"
