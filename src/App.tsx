@@ -762,6 +762,11 @@ export default function App() {
   const [quickClientName, setQuickClientName] = useState('');
   const [quickClientPhone, setQuickClientPhone] = useState('');
 
+  const [showQuickService, setShowQuickService] = useState(false);
+  const [quickServiceName, setQuickServiceName] = useState('');
+  const [quickServicePrice, setQuickServicePrice] = useState<number>(80);
+  const [quickServiceDuration, setQuickServiceDuration] = useState<number>(60);
+
   // New Service Builder
   const [newService, setNewService] = useState({
     name: '',
@@ -847,8 +852,14 @@ export default function App() {
   const handleDeleteLead = (id: string) => {
     const parent = leads.find(l => l.id === id);
     if (parent) {
-      setLeads(prev => prev.filter(l => l.id !== id));
-      logActivity(`Lead "${parent.name}" excluído do funil`);
+      requestConfirm(
+        'Excluir Lead / Prospecção',
+        `Tem certeza de que deseja excluir permanentemente o lead "${parent.name}"? Esta ação não poderá ser desfeita.`,
+        () => {
+          setLeads(prev => prev.filter(l => l.id !== id));
+          logActivity(`Lead "${parent.name}" excluído do funil`);
+        }
+      );
     }
   };
 
@@ -2712,10 +2723,11 @@ export default function App() {
                         <label className="text-[9px] text-slate-500 font-mono block">Telefone</label>
                         <input
                           type="text"
+                          maxLength={15}
                           placeholder="(11) 99999-9999"
                           value={quickClientPhone}
-                          onChange={(e) => setQuickClientPhone(e.target.value)}
-                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs"
+                          onChange={(e) => setQuickClientPhone(formatPhone(e.target.value))}
+                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs font-mono"
                         />
                       </div>
                     </div>
@@ -2755,7 +2767,7 @@ export default function App() {
                     value={newBooking.clientId}
                     onChange={(e) => setNewBooking(prev => ({ ...prev, clientId: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none underline-none"
                   >
                     <option value="">Selecione um cliente...</option>
                     {pendingLeadConversion && (
@@ -2768,20 +2780,103 @@ export default function App() {
                 )}
               </div>
 
-              {/* Service Select */}
+              {/* Service Select with quick add trigger */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-mono">Procedimento Estético</label>
-                <select
-                  value={newBooking.serviceId}
-                  onChange={(e) => setNewBooking(prev => ({ ...prev, serviceId: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
-                >
-                  <option value="">Selecione o procedimento...</option>
-                  {services.filter(s => s.status === 'Ativo').map(s => (
-                    <option key={s.id} value={s.id} className="capitalize">{s.name} ({formatCurrency(s.price)})</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block font-mono">Serviços</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowQuickService(!showQuickService);
+                      setQuickServiceName('');
+                      setQuickServicePrice(80);
+                      setQuickServiceDuration(60);
+                    }}
+                    style={{ color: customPrimary }}
+                    className="text-[10px] font-bold hover:underline cursor-pointer"
+                  >
+                    {showQuickService ? '✕ Cancelar Cadastro' : '+ Cadastrar Serviços'}
+                  </button>
+                </div>
+
+                {showQuickService ? (
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 animate-fade-in">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Cadastro Rápido de Serviço</span>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-slate-500 font-mono block">Nome do Serviço</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Massagem Modeladora"
+                        value={quickServiceName}
+                        onChange={(e) => setQuickServiceName(e.target.value)}
+                        className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-mono block">Valor (R$)</label>
+                        <input
+                          type="text"
+                          required
+                          value={formatDecimalDisplay(quickServicePrice)}
+                          onChange={(e) => setQuickServicePrice(parseDecimalFromInput(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                          placeholder="0,00"
+                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs font-mono text-right"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-slate-500 font-mono block">Tempo (minutos)</label>
+                        <input
+                          type="number"
+                          required
+                          value={quickServiceDuration}
+                          onChange={(e) => setQuickServiceDuration(Number(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                          placeholder="60"
+                          className="w-full px-2 py-1.5 bg-white border border-slate-250 rounded-lg text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!quickServiceName.trim()) {
+                          alert('Por favor, preencha o Nome do serviço.');
+                          return;
+                        }
+                        const added: Service = {
+                          id: generateUniqueId('srv'),
+                          name: quickServiceName.trim(),
+                          price: quickServicePrice,
+                          duration: quickServiceDuration,
+                          visibleInBooking: true,
+                          status: 'Ativo',
+                        };
+                        setServices(prev => [...prev, added]);
+                        logActivity(`Novo serviço por cadastro rápido: ${added.name}`);
+                        setNewBooking(prev => ({ ...prev, serviceId: added.id }));
+                        setShowQuickService(false);
+                      }}
+                      style={{ backgroundColor: customPrimary }}
+                      className="w-full py-2 rounded-xl text-white font-semibold text-xs hover:opacity-95 cursor-pointer"
+                    >
+                      Salvar e Selecionar Serviço
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={newBooking.serviceId}
+                    onChange={(e) => setNewBooking(prev => ({ ...prev, serviceId: e.target.value }))}
+                    required
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-150 rounded-xl text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="">Selecione o serviço...</option>
+                    {services.filter(s => s.status === 'Ativo').map(s => (
+                      <option key={s.id} value={s.id} className="capitalize">{s.name} ({formatCurrency(s.price)})</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Professional Select */}

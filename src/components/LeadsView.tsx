@@ -206,21 +206,21 @@ export default function LeadsView({
                     return (
                       <div 
                         key={l.id}
-                        className="bg-white rounded-2xl p-4 border border-slate-150 hover:border-slate-350 shadow-xs transition-colors hover:shadow-xs group space-y-3 relative overflow-hidden"
+                        className="bg-white rounded-2xl p-4.5 border border-slate-150 hover:border-slate-300 shadow-xs transition-colors hover:shadow-sm group space-y-3.5 relative overflow-hidden"
                       >
                         {/* Interactive accent stripe on card left side */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500/20" />
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500/30" />
                         
                         <div className="space-y-1">
-                          <h4 className="font-bold text-xs text-slate-800 capitalize leading-tight truncate">{l.name}</h4>
+                          <h4 className="font-extrabold text-sm text-slate-850 capitalize leading-tight truncate">{l.name}</h4>
                           {l.phone && (
                             <a 
                               href={`https://wa.me/${l.phone.replace(/\D/g, '')}?text=Olá ${l.name}! Tudo bem? Sou da equipe da clínica e estou entrando em contato referente à sua dúvida sobre ${serv?.name || 'procedimentos'}.`} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[10px] text-slate-500 hover:text-emerald-600 flex items-center gap-1 font-mono hover:underline inline-block mt-0.5"
+                              className="text-xs text-slate-500 hover:text-emerald-600 flex items-center gap-1.5 font-mono hover:underline inline-block mt-1"
                             >
-                              <Phone size={10} className="text-emerald-500" />
+                              <Phone size={12} className="text-emerald-500" />
                               {formatPhone(l.phone)}
                             </a>
                           )}
@@ -228,12 +228,12 @@ export default function LeadsView({
 
                         {/* Interested Service Badge */}
                         {(serv || l.interestServiceId === 'duvidas_consulta') && (
-                          <div className="flex items-center justify-between bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 text-[10px]">
-                            <span className="text-slate-500 truncate capitalize max-w-[120px]" title={serv ? serv.name : 'Dúvidas / Consulta Geral'}>
+                          <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.8 rounded-xl border border-slate-100 text-xs">
+                            <span className="text-slate-600 truncate capitalize max-w-[130px] font-medium" title={serv ? serv.name : 'Dúvidas / Consulta Geral'}>
                               {serv ? serv.name : 'Dúvidas / Consulta'}
                             </span>
                             {serv && (
-                              <span className="font-mono text-[9px] font-bold text-indigo-650 bg-indigo-50/50 px-1 rounded">
+                              <span className="font-mono text-[10.5px] font-extrabold text-indigo-650 bg-indigo-50/55 px-1.5 py-0.5 rounded">
                                 {formatCurrency(serv.price)}
                               </span>
                             )}
@@ -242,59 +242,59 @@ export default function LeadsView({
 
                         {/* Lead notes preview truncated */}
                         {l.notes && (
-                          <p className="text-[10px] text-slate-450 font-sans leading-normal italic px-1 line-clamp-2 border-l border-slate-100 pl-1.5" title={l.notes}>
+                          <p className="text-[11.5px] text-slate-500 font-sans leading-relaxed italic px-1 line-clamp-3 border-l border-slate-200 pl-2 mt-1" title={l.notes}>
                             {l.notes}
                           </p>
                         )}
 
                         {/* Card Options / Actions Footer Panel */}
-                        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 mt-2">
-                          <div className="flex items-center justify-between gap-1.5">
+                        <div className="pt-2.5 border-t border-slate-100 flex flex-col gap-2.5 mt-2.5">
+                          <div className="flex items-center justify-between gap-2">
                             {/* Mover arrows */}
                             <div className="flex gap-1 shrink-0">
                               <button 
                                 onClick={() => handleMoveLeft(l)}
                                 disabled={stg.key === 'novo'}
-                                className="p-1 bg-slate-50 hover:bg-slate-100 border border-slate-150 text-slate-400 hover:text-slate-700 rounded-md disabled:opacity-30 cursor-pointer"
+                                className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 text-slate-500 hover:text-slate-800 rounded-lg disabled:opacity-30 cursor-pointer"
                                 title="Mover para esquerda"
                               >
-                                <ArrowLeft size={11} />
+                                <ArrowLeft size={13} />
                               </button>
                               <button 
                                 onClick={() => handleMoveRight(l)}
                                 disabled={stg.key === 'arquivado'}
-                                className="p-1 bg-slate-50 hover:bg-slate-100 border border-slate-150 text-slate-400 hover:text-slate-700 rounded-md disabled:opacity-30 cursor-pointer"
+                                className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 text-slate-500 hover:text-slate-800 rounded-lg disabled:opacity-30 cursor-pointer"
                                 title="Mover para direita"
                               >
-                                <ArrowRight size={11} />
+                                <ArrowRight size={13} />
                               </button>
                             </div>
 
                             {/* CalendarPlus - Agenda+ Conversion Button */}
                             <button 
                               onClick={() => onConvertToClientAndSchedule(l)}
-                              className="flex-1 py-1 px-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 rounded-md font-bold text-[9px] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                              className="flex-1 py-1.5 px-3 bg-indigo-55 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                               title="Criar Cliente & Abrir Nova Consulta"
                             >
-                              <CalendarPlus size={11} /> Agenda+
+                              <CalendarPlus size={13} /> Agenda+
                             </button>
                           </div>
 
                           {/* Secondary utility actions */}
-                          <div className="flex items-center justify-end gap-1.5 text-slate-400 text-[10px]">
+                          <div className="flex items-center justify-between gap-1.5">
                             <button 
                               onClick={() => handleOpenEditModal(l)}
-                              className="px-2 py-1 flex items-center gap-1 text-[9px] text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-indigo-50 border border-slate-100 rounded-md cursor-pointer transition-all"
+                              className="px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-slate-605 font-bold hover:text-slate-800 bg-slate-50 hover:bg-indigo-50 border border-slate-150 rounded-lg cursor-pointer transition-all"
                               title="Editar Lead"
                             >
-                              <Edit size={10} /> Editar
+                              <Edit size={12} /> Editar
                             </button>
                             <button 
                               onClick={() => onDeleteLead(l.id)}
-                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-55 rounded-md cursor-pointer transition-all animate-none"
+                              className="p-1.5 border border-rose-100 text-rose-500 hover:text-rose-600 bg-rose-50/70 hover:bg-rose-100/80 rounded-lg transition-colors cursor-pointer flex items-center justify-center font-bold"
                               title="Excluir"
                             >
-                              <Trash2 size={10} />
+                              <Trash2 size={12} />
                             </button>
                           </div>
                         </div>
