@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Client, Appointment, Service, formatCurrency, formatPhone } from '../types';
-import { Search, UserPlus, Phone, Calendar, History, ArrowLeft, DollarSign, Activity, FileText } from 'lucide-react';
+import { Search, UserPlus, Phone, Calendar, History, ArrowLeft, DollarSign, Activity, FileText, Trash2 } from 'lucide-react';
 
 interface ClientesViewProps {
   clients: Client[];
@@ -12,6 +12,7 @@ interface ClientesViewProps {
   onOpenNewAppointmentWithClient: (clientId: string) => void;
   allowClinicalHistory: boolean;
   onShowUpgradeModal: (featureName: string) => void;
+  onDeleteClient: (id: string) => void;
 }
 
 export default function ClientesView({
@@ -24,6 +25,7 @@ export default function ClientesView({
   onOpenNewAppointmentWithClient,
   allowClinicalHistory,
   onShowUpgradeModal,
+  onDeleteClient,
 }: ClientesViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClientProfile, setSelectedClientProfile] = useState<Client | null>(null);
@@ -154,7 +156,7 @@ export default function ClientesView({
           </div>
 
           {history.length === 0 ? (
-            <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum atendimento registrado para este cliente.</div>
+            <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum atendimento registrado para este paciente.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
@@ -205,15 +207,15 @@ export default function ClientesView({
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-800 tracking-tight">Clientes</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Gerencie os perfis dos seus clientes, observações clínicas e históricos.</p>
+          <h2 className="text-2xl font-semibold text-slate-800 tracking-tight">Pacientes</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Gerencie os perfis dos seus pacientes, observações clínicas e históricos.</p>
         </div>
         <button
           onClick={onOpenNewClient}
           className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium text-white shadow-sm transition-opacity hover:opacity-90 self-start md:self-center cursor-pointer"
           style={{ backgroundColor: customPrimary }}
         >
-          <span className="text-sm font-bold">+</span> Novo cliente
+          <span className="text-sm font-bold">+</span> Novo paciente
         </button>
       </div>
 
@@ -222,7 +224,7 @@ export default function ClientesView({
         <Search className="absolute left-4 top-3.5 text-slate-400" size={16} />
         <input
           type="text"
-          placeholder="Buscar cliente..."
+          placeholder="Buscar paciente..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-xs text-slate-700 shadow-xs focus:outline-none focus:ring-1 focus:ring-slate-350"
@@ -232,7 +234,7 @@ export default function ClientesView({
       {/* Customer Listing */}
       {filteredClients.length === 0 ? (
         <div className="bg-white p-12 text-center rounded-3xl border border-slate-100 shadow-xs text-xs text-slate-400 italic">
-          Nenhum cliente cadastrado
+          Nenhum paciente cadastrado
         </div>
       ) : (
         <div className="space-y-3">
@@ -278,6 +280,13 @@ export default function ClientesView({
                 >
                   <History size={12} className="text-slate-400" />
                   Histórico
+                </button>
+                <button
+                  onClick={() => onDeleteClient(client.id)}
+                  className="p-2 border border-rose-100 text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer flex items-center justify-center font-bold"
+                  title="Excluir Paciente"
+                >
+                  <Trash2 size={12} />
                 </button>
               </div>
             </div>

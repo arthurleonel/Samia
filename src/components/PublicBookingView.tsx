@@ -850,7 +850,7 @@ export default function PublicBookingView({
       {/* Footer System Credits */}
       <span className="text-[10px] text-slate-400 mt-6 select-none flex items-center gap-1">
         <span>Sistema de agendamento seguro fornecido por</span>
-        <strong className="text-slate-500 font-semibold font-sans">{settings.name || 'Leonel CRM'}</strong>
+        <strong className="text-slate-500 font-semibold font-sans">Leonelsystem</strong>
       </span>
     </div>
   );

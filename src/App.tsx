@@ -1111,6 +1111,20 @@ export default function App() {
     );
   };
 
+  const handleDeleteClient = (id: string) => {
+    const cli = clients.find(c => c.id === id);
+    if (!cli) return;
+
+    requestConfirm(
+      'Excluir Paciente',
+      `Tem certeza de que deseja excluir permanentemente o(a) paciente "${cli.name}"? Seus agendamentos e históricos continuarão salvos, mas ele(a) não constará mais na lista.`,
+      () => {
+        setClients(prev => prev.filter(c => c.id !== id));
+        logActivity(`Paciente "${cli.name}" excluído.`);
+      }
+    );
+  };
+
   const handleEditAppointment = (id: string, updatedFields: Partial<Appointment>) => {
     setAppointments(prev => prev.map(apt => apt.id === id ? { ...apt, ...updatedFields } : apt));
     logActivity(`Agendamento atualizado com novas informações.`);
@@ -1475,7 +1489,7 @@ export default function App() {
             }`}
           >
             <Sparkles size={15} className="mr-3 text-slate-400 shrink-0" />
-            Tratamentos
+            Serviços
           </button>
 
           {/* EQUIPE */}
@@ -1701,8 +1715,8 @@ export default function App() {
                  switch (activeTab) {
                    case 'dashboard': return 'Painel Geral';
                    case 'agendamentos': return 'Agenda de Horários';
-                   case 'clientes': return 'Meus Clientes';
-                   case 'servicos': return 'Serviços e Tratamentos';
+                   case 'clientes': return 'Meus Pacientes';
+                   case 'servicos': return 'Serviços';
                    case 'equipe': return 'Profissionais e Colaboradores';
                    case 'horarios': return 'Horário de Funcionamento';
                    case 'mensagens': return 'Modelos de Mensagens';
@@ -1799,6 +1813,7 @@ export default function App() {
               }}
               allowClinicalHistory={currentFeatures.allowClinicalHistory}
               onShowUpgradeModal={handleShowUpgradeModal}
+              onDeleteClient={handleDeleteClient}
             />
           )}
 

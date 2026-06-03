@@ -640,37 +640,16 @@ export default function AgendamentosView({
                         Ausente
                       </button>
                     )}
-                    {deleteConfirmId === selectedApt.id ? (
-                      <div className="flex gap-1 items-center bg-red-50 p-1 rounded-xl border border-red-100 animate-pulse">
-                        <span className="text-[8px] text-red-600 font-bold px-1 select-none">Excluir?</span>
-                        <button
-                          onClick={() => {
-                            onDeleteAppointment(selectedApt.id);
-                            setSelectedApt(null);
-                            setDeleteConfirmId(null);
-                          }}
-                          className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[8px] font-bold cursor-pointer"
-                        >
-                          Sim
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirmId(null)}
-                          className="px-2 py-1 bg-white text-slate-500 rounded-lg text-[8px] font-bold border border-slate-150 cursor-pointer"
-                        >
-                          Não
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setDeleteConfirmId(selectedApt.id);
-                        }}
-                        className="p-2.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center cursor-pointer"
-                        title="Excluir Agendamento"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        onDeleteAppointment(selectedApt.id);
+                        setSelectedApt(null);
+                      }}
+                      className="p-2.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl flex items-center justify-center cursor-pointer"
+                      title="Excluir Agendamento"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </>
                 )}
               </div>
